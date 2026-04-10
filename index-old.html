@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wycena LV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #0a0a0a;
+  --gray-900: #1a1a1a;
+  --gray-700: #444;
+  --gray-500: #888;
+  --gray-300: #ccc;
+  --gray-200: #e0e0e0;
+  --gray-100: #f2f2f2;
+  --gray-50:  #f8f8f8;
+  --white: #fff;
+  --border: 1px solid #e0e0e0;
+  --border-strong: 1px solid #aaa;
+  --font-ui: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+body { font-family: var(--font-ui); color: var(--black); background: var(--white); font-size: 14px; line-height: 1.5; }
+.shell { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+
+/* header */
+.site-header { border-bottom: 2px solid var(--black); padding: 28px 0 16px; margin-bottom: 32px; display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+.site-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.site-header .sub { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.06em; }
+.rates-badge { margin-left: auto; font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; border: var(--border-strong); color: var(--gray-500); display: flex; align-items: center; gap: 6px; }
+.rates-badge.live { color: #2a6f2a; border-color: #2a6f2a; background: #f0fff0; }
+.rates-badge.loading { color: var(--gray-500); }
+
+/* section label */
+.slabel { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gray-500); padding-bottom: 8px; border-bottom: var(--border); margin-bottom: 16px; margin-top: 28px; }
+
+/* upload */
+.upload-zone { border: 2px dashed var(--gray-300); padding: 48px 24px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; background: var(--gray-50); }
+.upload-zone:hover, .upload-zone.over { border-color: var(--black); background: var(--gray-100); }
+.upload-zone input { display: none; }
+.upload-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.upload-hint { font-size: 12px; color: var(--gray-500); }
+
+/* pdf list */
+.pdf-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: var(--border); background: var(--gray-50); margin-bottom: 6px; font-size: 12px; }
+.pdf-item .pdf-name { flex: 1; font-family: var(--font-mono); font-size: 11px; color: var(--gray-700); }
+.pdf-item .pdf-pages { font-size: 10px; color: var(--gray-500); }
+.pdf-item .pdf-remove { background: none; border: none; color: var(--gray-500); cursor: pointer; font-size: 14px; padding: 2px 6px; }
+.pdf-item .pdf-remove:hover { color: #8b0000; }
+
+/* settings */
+.toggle-btn { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); cursor: pointer; border: none; background: none; display: flex; align-items: center; gap: 6px; padding: 6px 0; }
+.toggle-btn::before { content: '▶'; font-size: 8px; transition: transform .15s; }
+.toggle-btn.open::before { transform: rotate(90deg); }
+.collapsible { display: none; border: var(--border); padding: 20px; background: var(--gray-50); margin-bottom: 20px; }
+.collapsible.open { display: block; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.rates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.rate-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.rate-label { font-size: 12px; color: var(--gray-700); }
+.rate-range { font-family: var(--font-mono); font-size: 10px; color: var(--gray-500); }
+
+/* fields */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); }
+.field input, .field select { font-family: var(--font-mono); font-size: 12px; padding: 7px 10px; border: var(--border-strong); background: var(--white); color: var(--black); outline: none; width: 100%; border-radius: 0; }
+.field input:focus, .field select:focus { border-color: var(--black); }
+.field input[readonly] { background: var(--gray-100); color: var(--gray-500); }
+.rate-input { font-family: var(--font-mono); font-size: 12px; padding: 4px 8px; border: var(--border-strong); width: 72px; text-align: right; background: var(--white); outline: none; border-radius: 0; }
+.rate-input:focus { border-color: var(--black); }
+.rate-input.updated { border-color: #2a6f2a; background: #f8fff8; }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-ui); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; padding: 9px 20px; border: var(--border-strong); cursor: pointer; background: var(--white); color: var(--black); transition: all .12s; border-radius: 0; }
+.btn:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+.btn-primary { background: var(--black); color: var(--white); border-color: var(--black); }
+.btn-primary:hover { background: #333; }
+.btn-sm { padding: 5px 12px; font-size: 10px; }
+.btn:disabled { opacity: .35; pointer-events: none; }
+
+/* status */
+.status { font-size: 12px; padding: 10px 14px; border-left: 3px solid var(--black); background: var(--gray-50); color: var(--gray-700); display: none; }
+.status.show { display: block; }
+.status.ok  { border-left-color: #2a6f2a; background: #f0fff0; }
+.status.err { border-left-color: #8b0000; background: #fff0f0; }
+.status.warn{ border-left-color: #7a5c00; background: #fffbf0; }
+
+/* loader */
+.loader { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--gray-300); border-top-color: var(--black); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* table */
+.tbl-wrap { overflow-x: auto; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--black); white-space: nowrap; }
+th.r { text-align: right; }
+tbody tr { border-bottom: var(--border); }
+tbody tr:hover { background: var(--gray-50); }
+tbody td { padding: 9px 10px; vertical-align: middle; }
+.td-pos { font-family: var(--font-mono); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.td-desc { color: var(--gray-700); max-width: 220px; }
+.td-num { font-family: var(--font-mono); font-size: 11px; text-align: right; white-space: nowrap; }
+.td-val { font-family: var(--font-mono); font-size: 12px; font-weight: 500; text-align: right; white-space: nowrap; }
+.td-price input { font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 5px 8px; border: var(--border-strong); width: 88px; text-align: right; background: var(--white); color: var(--black); outline: none; border-radius: 0; }
+.td-price input:focus { border-color: var(--black); }
+td select { font-family: var(--font-ui); font-size: 11px; padding: 3px 6px; border: var(--border); background: var(--white); color: var(--gray-700); max-width: 150px; border-radius: 0; outline: none; }
+td select:focus { border-color: var(--black); }
+
+/* totals */
+.totals { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 2px solid var(--black); margin-top: 16px; }
+.total-item { padding: 14px 20px; border-right: 2px solid var(--black); }
+.total-item:last-child { border-right: none; background: var(--black); color: var(--white); }
+.t-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 4px; }
+.total-item:last-child .t-label { color: #aaa; }
+.t-value { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
+
+/* action bar */
+.action-bar { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; align-items: center; }
+
+/* review panel */
+.review-panel { border: 2px solid var(--black); margin-top: 24px; }
+.review-header { background: var(--black); color: var(--white); padding: 12px 18px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.review-body { padding: 20px; background: var(--gray-50); line-height: 1.7; font-size: 13px; }
+.review-body h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-top: 16px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: var(--border); }
+.review-body h2:first-child { margin-top: 0; }
+.review-body p { margin-bottom: 8px; }
+.review-body ul { padding-left: 18px; margin-bottom: 8px; }
+.review-body li { margin-bottom: 4px; }
+.review-body strong { font-weight: 600; color: var(--black); }
+
+/* print */
+@media print {
+  .no-print { display: none !important; }
+  body { font-size: 11px; }
+  .shell { padding: 0; max-width: 100%; }
+  .site-header { padding: 12px 0 8px; margin-bottom: 16px; }
+  .upload-zone, .toggle-btn, .collapsible, .action-bar { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── header ── -->
+<header class="site-header no-print">
+  <h1>Wycena LV</h1>
+  <span class="sub">Montaz okien i drzwi aluminiowych</span>
+  <div class="rates-badge loading" id="rates-badge">
+    <span class="loader"></span> Pobieranie stawek...
+  </div>
+</header>
+
+<!-- ── settings ── -->
+<div class="no-print">
+  <button class="toggle-btn" onclick="toggle(this,'settings-panel')">Ustawienia</button>
+  <div class="collapsible" id="settings-panel">
+    <div class="settings-grid">
+      <div class="field">
+        <label>Koszty ogólne (%)</label>
+        <input type="number" id="overhead" value="15" min="0" max="100" oninput="recalc()">
+      </div>
+      <div class="field">
+        <label>Marża zysku (%)</label>
+        <input type="number" id="margin" value="10" min="0" max="100" oninput="recalc()">
+      </div>
+      <div class="field">
+        <label>Mnożnik łącznie</label>
+        <input type="text" id="markup-disp" readonly>
+      </div>
+    </div>
+  </div>
+
+  <button class="toggle-btn" onclick="toggle(this,'rates-panel')">Stawki rynkowe (EUR/m²)</button>
+  <div class="collapsible" id="rates-panel">
+    <p style="font-size:11px;color:var(--gray-500);margin-bottom:8px;">
+      Pobrane automatycznie z Perplexity AI. Aktualizują się przy każdym otwarciu strony.
+    </p>
+    <div class="status show" id="rates-status">
+      <span class="loader"></span> Pobieranie aktualnych stawek rynkowych...
+    </div>
+    <div class="rates-grid" id="rates-grid"></div>
+  </div>
+
+  <!-- upload -->
+  <div class="slabel">Opcja 1: Plik LV (Excel)</div>
+  <div class="upload-zone" id="drop-zone"
+       onclick="document.getElementById('lv-input').click()"
+       ondragover="onOver(event)" ondragleave="onLeave(event)" ondrop="onDrop(event)">
+    <input type="file" id="lv-input" accept=".xlsx,.xls" onchange="onFile(event)">
+    <div class="upload-title">Kliknij lub upuść plik .xlsx tutaj</div>
+    <div class="upload-hint">Plik Leistungsverzeichnis z kolumnami: Pos., Breite, Höhe, m² Gesamt</div>
+  </div>
+  <div class="status" id="parse-status" style="margin-top:8px;"></div>
+
+  <!-- PDF upload -->
+  <div class="slabel" style="margin-top:20px;">Opcja 2: Rysunki techniczne (PDF)</div>
+  <div class="upload-zone" id="pdf-drop-zone"
+       onclick="document.getElementById('pdf-input').click()"
+       ondragover="onPdfOver(event)" ondragleave="onPdfLeave(event)" ondrop="onPdfDrop(event)"
+       style="padding:32px 24px;">
+    <input type="file" id="pdf-input" accept=".pdf" multiple onchange="onPdfFile(event)">
+    <div class="upload-title">Dodaj pliki PDF z planami</div>
+    <div class="upload-hint">Claude przeanalizuje rysunki i automatycznie wyciągnie pozycje do wyceny</div>
+  </div>
+  <div id="pdf-list" style="margin-top:8px;"></div>
+  <div class="status" id="pdf-status" style="margin-top:8px;"></div>
+  <div id="pdf-actions" style="margin-top:12px; display:none;">
+    <button class="btn btn-primary" onclick="analyzePdfAndCreate()" id="analyze-pdf-btn">
+      Analizuj PDF i utwórz wycenę
+    </button>
+  </div>
+</div>
+
+<!-- ── main ── -->
+<div id="app-main" style="display:none;">
+  <div class="slabel">Pozycje montażowe</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Poz.</th>
+          <th>Opis</th>
+          <th>Typ</th>
+          <th class="r">m² łącznie</th>
+          <th class="r">Rynek EUR/m²</th>
+          <th class="r">Oferta EUR/m²</th>
+          <th class="r">Wartość EUR</th>
+        </tr>
+      </thead>
+      <tbody id="pos-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="totals">
+    <div class="total-item">
+      <div class="t-label">Suma netto</div>
+      <div class="t-value" id="t-netto">—</div>
+    </div>
+    <div class="total-item">
+      <div class="t-label">MwSt 19%</div>
+      <div class="t-value" id="t-vat">—</div>
+    </div>
+    <div class="total-item">
+      <div class="t-label">Suma brutto</div>
+      <div class="t-value" id="t-brutto">—</div>
+    </div>
+  </div>
+
+  <div class="action-bar no-print">
+    <button class="btn btn-primary" onclick="exportXlsx()">Pobierz Excel LV</button>
+    <button class="btn" onclick="doReview()" id="review-btn">Analiza z Claude</button>
+    <button class="btn" onclick="window.print()">Drukuj</button>
+    <button class="btn btn-sm" onclick="resetApp()" style="margin-left:auto;">Nowy plik</button>
+  </div>
+
+  <!-- claude review -->
+  <div class="review-panel" id="review-panel" style="display:none;">
+    <div class="review-header">Analiza Claude — Inteligentna weryfikacja wyceny</div>
+    <div class="review-body" id="review-body"></div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+<script>
+// ── types / price database ────────────────────────────────────────────────────
+const TYPES = [
+  { id:'hst_tip', label:'HST motorisch Tiptronic', kw:['tiptronic','elektrisch schieb'],          def:90 },
+  { id:'hst_man', label:'HST manuell',             kw:['hebe-schiebe','schiebbar','hst'],          def:65 },
+  { id:'haustuer',label:'Haustür / Eingangstür',   kw:['haustür','haustüranlage','eingangstür'],   def:75 },
+  { id:'dk',      label:'Dreh-Kipp Fenster',       kw:['dreh-kipp','dreh kipp'],                   def:50 },
+  { id:'fest',    label:'Festelement',              kw:['festelement','festfeld','fest-element'],    def:38 },
+  { id:'stulp',   label:'Stulpfenster',             kw:['stulp'],                                   def:55 },
+  { id:'brand',   label:'Brandschutztür T30',       kw:['brandschutz','t30','f30'],                 def:115},
+  { id:'raff',    label:'Sonnenschutz / Raffstore', kw:['raffstore','sonnenschutz','warema'],        def:32 },
+  { id:'other',   label:'Sonstige',                 kw:[],                                          def:50 },
+];
+
+// ── state ─────────────────────────────────────────────────────────────────────
+const S = { wb:null, colMap:{}, positions:[], liveRates:{}, pdfTexts:{} };
+
+// ── utils ─────────────────────────────────────────────────────────────────────
+const pn = v => { const s=String(v||'').replace(/[^\d.,]/g,'').replace(',','.'); const n=parseFloat(s); return isNaN(n)?null:n; };
+const fmt = (n,d=2) => n==null||isNaN(n)?'—':n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const markup = () => (1+(parseFloat(document.getElementById('overhead').value)||0)/100)*(1+(parseFloat(document.getElementById('margin').value)||0)/100);
+
+function classify(desc) {
+  const d = desc.toLowerCase();
+  for (const t of TYPES) {
+    if (t.id==='other') continue;
+    if (t.kw.some(k=>d.includes(k))) return t;
+  }
+  return TYPES.at(-1);
+}
+
+function getBaseRate(typeId) {
+  const lr = S.liveRates[typeId];
+  if (lr) return lr.avg;
+  const el = document.getElementById('rate-'+typeId);
+  return el ? (parseFloat(el.value)||0) : (TYPES.find(t=>t.id===typeId)?.def||50);
+}
+
+// ── settings UI ───────────────────────────────────────────────────────────────
+function toggle(btn, panelId) {
+  btn.classList.toggle('open');
+  document.getElementById(panelId).classList.toggle('open');
+  if (panelId==='settings-panel') updateMarkupDisp();
+}
+function updateMarkupDisp() {
+  document.getElementById('markup-disp').value = 'x' + markup().toFixed(3);
+}
+
+function buildRatesGrid(liveRates) {
+  const grid = document.getElementById('rates-grid');
+  grid.innerHTML = '';
+  TYPES.filter(t=>t.id!=='other').forEach(t => {
+    const lr = liveRates[t.id];
+    const val = lr ? lr.avg : t.def;
+    const rangeStr = lr ? `${lr.min}–${lr.max}` : `fallback`;
+    const row = document.createElement('div');
+    row.className = 'rate-row';
+    row.innerHTML = `
+      <div>
+        <div class="rate-label">${t.label}</div>
+        <div class="rate-range">${rangeStr} EUR/m²</div>
+      </div>
+      <input class="rate-input${lr?' updated':''}" id="rate-${t.id}" type="number" value="${val}" min="0" step="5" oninput="recalc()">
+    `;
+    grid.appendChild(row);
+  });
+}
+
+// ── live rates from /api/rates ────────────────────────────────────────────────
+async function fetchLiveRates() {
+  const badge = document.getElementById('rates-badge');
+  const rStatus = document.getElementById('rates-status');
+  try {
+    const res = await fetch('/api/rates', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.rates && Object.keys(data.rates).length > 0) {
+      S.liveRates = data.rates;
+      buildRatesGrid(data.rates);
+      const d = new Date(data.date);
+      badge.className = 'rates-badge live';
+      badge.innerHTML = `Stawki aktualne: ${d.toLocaleDateString('pl-PL')}`;
+      rStatus.className = 'status show ok';
+      rStatus.textContent = `Pobrano ${Object.keys(data.rates).length} stawek z Perplexity AI (${d.toLocaleDateString('pl-PL')}).`;
+    } else {
+      throw new Error('Empty rates');
+    }
+  } catch(e) {
+    buildRatesGrid({});
+    badge.className = 'rates-badge';
+    badge.innerHTML = 'Stawki: baza wbudowana';
+    rStatus.className = 'status show warn';
+    rStatus.textContent = 'Nie udało się pobrać stawek online — używam bazy wbudowanej 2024/2025.';
+  }
+  updateMarkupDisp();
+  recalc();
+}
+
+// ── drag & drop ───────────────────────────────────────────────────────────────
+function onOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('over'); }
+function onLeave()  { document.getElementById('drop-zone').classList.remove('over'); }
+function onDrop(e)  { e.preventDefault(); onLeave(); const f=e.dataTransfer.files[0]; if(f) processFile(f); }
+function onFile(e)  { const f=e.target.files[0]; if(f) processFile(f); }
+
+// ── PDF drag & drop ───────────────────────────────────────────────────────────
+function onPdfOver(e) { e.preventDefault(); document.getElementById('pdf-drop-zone').classList.add('over'); }
+function onPdfLeave() { document.getElementById('pdf-drop-zone').classList.remove('over'); }
+function onPdfDrop(e) { e.preventDefault(); onPdfLeave(); const files=Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf'); if(files.length) processPdfs(files); }
+function onPdfFile(e) { const files=Array.from(e.target.files); if(files.length) processPdfs(files); }
+
+async function processPdfs(files) {
+  const status = document.getElementById('pdf-status');
+  status.className = 'status show'; status.textContent = `Wczytywanie ${files.length} PDF...`;
+  
+  for (const file of files) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n\n';
+      }
+      S.pdfTexts[file.name] = { text: text.trim(), pages: pdf.numPages };
+    } catch(e) {
+      S.pdfTexts[file.name] = { text: `Błąd odczytu: ${e.message}`, pages: 0 };
+    }
+  }
+  
+  renderPdfList();
+  status.className = 'status show ok';
+  status.textContent = `Wczytano ${Object.keys(S.pdfTexts).length} plik(ów) PDF.`;
+  document.getElementById('pdf-input').value = '';
+}
+
+function renderPdfList() {
+  const list = document.getElementById('pdf-list');
+  const actions = document.getElementById('pdf-actions');
+  list.innerHTML = '';
+  const pdfCount = Object.keys(S.pdfTexts).length;
+  
+  Object.entries(S.pdfTexts).forEach(([name, data]) => {
+    const div = document.createElement('div');
+    div.className = 'pdf-item';
+    div.innerHTML = `
+      <span class="pdf-name">${esc(name)}</span>
+      <span class="pdf-pages">${data.pages} str.</span>
+      <button class="pdf-remove" onclick="removePdf('${esc(name)}')" title="Usuń">✕</button>
+    `;
+    list.appendChild(div);
+  });
+  
+  // Show/hide analyze button
+  actions.style.display = pdfCount > 0 ? 'block' : 'none';
+}
+
+function removePdf(name) {
+  delete S.pdfTexts[name];
+  renderPdfList();
+  if (Object.keys(S.pdfTexts).length === 0) {
+    document.getElementById('pdf-status').className = 'status';
+  }
+}
+
+// ── PDF analysis - create quote from drawings ─────────────────────────────────
+async function analyzePdfAndCreate() {
+  const btn = document.getElementById('analyze-pdf-btn');
+  const status = document.getElementById('pdf-status');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Claude analizuje rysunki...';
+  status.className = 'status show';
+  status.textContent = 'Wysyłanie do Claude — może potrwać do 30 sekund...';
+
+  const pdfContent = Object.entries(S.pdfTexts).map(([filename, data]) => ({
+    filename,
+    pages: data.pages,
+    text: data.text.substring(0, 8000) // More text for analysis
+  }));
+
+  try {
+    const res = await fetch('/api/parse-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfTexts: pdfContent })
+    });
+    
+    const data = await res.json();
+    
+    if (data.error) throw new Error(data.error);
+    if (!data.positions || data.positions.length === 0) {
+      throw new Error(data.summary || 'Nie znaleziono pozycji w dokumentach');
+    }
+
+    // Convert Claude positions to app format
+    S.positions = data.positions.map(p => {
+      const typeObj = TYPES.find(t => t.id === p.type) || TYPES.at(-1);
+      const m2 = p.m2 || (p.breite && p.hoehe ? (p.breite * p.hoehe / 1000000) : 1);
+      const totalM2 = m2 * (p.menge || 1);
+      
+      return {
+        posId: p.posId,
+        description: p.description + (p.notes ? ` (${p.notes})` : ''),
+        typeObj,
+        totalM2,
+        subItems: [{ excelRow: 0, m2: totalM2, breite: p.breite, hoehe: p.hoehe }],
+        fromPdf: true
+      };
+    });
+
+    S.customPrices = {};
+    S.projectName = data.projectName;
+    
+    status.className = 'status show ok';
+    status.innerHTML = `<strong>Znaleziono ${S.positions.length} pozycji!</strong> ${data.summary || ''}`;
+    
+    // Show special queries if any
+    if (data.perplexityQueries && data.perplexityQueries.length > 0) {
+      console.log('Suggested Perplexity queries:', data.perplexityQueries);
+    }
+
+    render();
+    document.getElementById('app-main').style.display = 'block';
+    document.getElementById('app-main').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (e) {
+    status.className = 'status show err';
+    status.textContent = 'Błąd analizy: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Analizuj PDF i utwórz wycenę';
+}
+
+// ── file processing ───────────────────────────────────────────────────────────
+function setStatus(id, msg, cls='') {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'status show ' + cls;
+}
+
+function processFile(file) {
+  setStatus('parse-status','Wczytywanie…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      setStatus('parse-status','Parsowanie struktury LV…');
+      S.wb = XLSX.read(e.target.result, {type:'binary'});
+      const positions = parseLV(S.wb);
+      if (!positions.length) {
+        setStatus('parse-status','Nie znaleziono pozycji z danymi m². Sprawdź format pliku.','err');
+        return;
+      }
+      S.positions = positions; S.customPrices = {};
+      setStatus('parse-status',`Sparsowano ${positions.length} pozycji. Przejrzyj i zatwierdź ceny poniżej.`,'ok');
+      render();
+      document.getElementById('app-main').style.display = 'block';
+      document.getElementById('app-main').scrollIntoView({behavior:'smooth'});
+    } catch(err) {
+      setStatus('parse-status','Błąd odczytu: '+err.message,'err');
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ── LV parser ─────────────────────────────────────────────────────────────────
+function parseLV(wb) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+  let hIdx=-1; const cm={};
+
+  for(let i=0;i<rows.length;i++){
+    const j=rows[i].join(' ').toLowerCase();
+    if((j.includes('pos')||j.includes('menge'))&&(j.includes('breite')||j.includes('gesamt')||j.includes('m²'))){
+      hIdx=i;
+      rows[i].forEach((c,k)=>{
+        const h=String(c).trim().toLowerCase();
+        if(!cm.pos    && h.startsWith('pos'))              cm.pos=k;
+        if(!cm.desc   && h.includes('kurz'))               cm.desc=k;
+        if(!cm.breite && h.includes('breite'))             cm.breite=k;
+        if(!cm.hoehe  &&(h.includes('höhe')||h.includes('hohe')||h.includes('höh'))) cm.hoehe=k;
+        if(!cm.m2ges  && h.includes('gesamt'))             cm.m2ges=k;
+        if(!cm.preis  && h.includes('preis')&&h.includes('/')) cm.preis=k;
+        if(!cm.angebot&& h.includes('angebot'))            cm.angebot=k;
+      });
+      break;
+    }
+  }
+  if(hIdx<0) return [];
+  if(cm.pos===undefined)    cm.pos=0;
+  if(cm.desc===undefined)   cm.desc=1;
+  if(cm.breite===undefined) cm.breite=7;
+  if(cm.hoehe===undefined)  cm.hoehe=8;
+  if(cm.m2ges===undefined)  cm.m2ges=10;
+  S.colMap=cm;
+
+  const positions=[]; let cur=null;
+  for(let i=hIdx+1;i<rows.length;i++){
+    const row=rows[i];
+    const posVal=String(row[cm.pos]||'').trim();
+    const descVal=String(row[cm.desc]||'').trim();
+    const m2=pn(row[cm.m2ges]);
+
+    if(posVal&&posVal!=='nan'&&posVal!=='NaN'){
+      const typeObj=classify(descVal);
+      cur={posId:posVal,description:descVal,typeObj,subItems:[]};
+      positions.push(cur);
+    }
+    if(cur&&!posVal&&descVal&&descVal!=='nan'){
+      cur.description=(cur.description+' '+descVal).trim();
+      if(cur.typeObj.id==='other') cur.typeObj=classify(cur.description);
+    }
+    if(cur&&m2&&m2>0) cur.subItems.push({excelRow:i+1, m2, breite:pn(row[cm.breite]), hoehe:pn(row[cm.hoehe])});
+  }
+  return positions.filter(p=>p.subItems.length>0).map(p=>({...p,totalM2:p.subItems.reduce((s,si)=>s+(si.m2||0),0)}));
+}
+
+// ── render table ──────────────────────────────────────────────────────────────
+function render() {
+  const tbody=document.getElementById('pos-tbody');
+  tbody.innerHTML='';
+  const mu=markup();
+  S.positions.forEach((p,i)=>{
+    const market=getBaseRate(p.typeObj.id);
+    const stored=S.customPrices?.[p.posId];
+    const offer=stored!==undefined?stored:parseFloat((market*mu).toFixed(2));
+    const val=offer*p.totalM2;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="td-pos">${esc(p.posId)}</td>
+      <td class="td-desc" title="${esc(p.description)}">${esc(p.description.substring(0,55))}${p.description.length>55?'…':''}</td>
+      <td><select onchange="changeType(${i},this.value)">
+        ${TYPES.map(t=>`<option value="${t.id}"${t.id===p.typeObj.id?' selected':''}>${t.label}</option>`).join('')}
+      </select></td>
+      <td class="td-num">${fmt(p.totalM2)}</td>
+      <td class="td-num" id="mkt-${i}">${fmt(market,2)}</td>
+      <td class="td-price"><input type="number" id="pr-${i}" value="${offer.toFixed(2)}" min="0" step="1" oninput="onPriceInput(${i},this.value)"></td>
+      <td class="td-val" id="vl-${i}">${fmt(val)}</td>`;
+    tbody.appendChild(tr);
+  });
+  updateTotals();
+}
+
+function changeType(i,typeId){
+  const t=TYPES.find(x=>x.id===typeId)||TYPES.at(-1);
+  S.positions[i].typeObj=t;
+  const market=getBaseRate(typeId);
+  const offer=parseFloat((market*markup()).toFixed(2));
+  if(!S.customPrices) S.customPrices={};
+  S.customPrices[S.positions[i].posId]=offer;
+  document.getElementById('pr-'+i).value=offer.toFixed(2);
+  document.getElementById('mkt-'+i).textContent=fmt(market,2);
+  recalcRow(i);
+}
+
+function onPriceInput(i,v){
+  if(!S.customPrices) S.customPrices={};
+  S.customPrices[S.positions[i].posId]=parseFloat(v)||0;
+  recalcRow(i);
+}
+
+function recalcRow(i){
+  const p=S.positions[i];
+  const price=parseFloat(document.getElementById('pr-'+i).value)||0;
+  document.getElementById('vl-'+i).textContent=fmt(price*p.totalM2);
+  updateTotals();
+}
+
+function recalc(){
+  updateMarkupDisp();
+  if(!S.positions.length) return;
+  const mu=markup();
+  S.positions.forEach((p,i)=>{
+    if(S.customPrices?.[p.posId]===undefined){
+      const market=getBaseRate(p.typeObj.id);
+      const el=document.getElementById('pr-'+i);
+      if(el){ el.value=(market*mu).toFixed(2); document.getElementById('mkt-'+i).textContent=fmt(market,2); }
+    }
+  });
+  updateTotals();
+}
+
+function updateTotals(){
+  let total=0;
+  S.positions.forEach((p,i)=>{
+    const price=parseFloat(document.getElementById('pr-'+i)?.value)||0;
+    const val=price*p.totalM2;
+    const el=document.getElementById('vl-'+i);
+    if(el) el.textContent=fmt(val);
+    total+=val;
+  });
+  document.getElementById('t-netto').textContent=fmt(total)+' EUR';
+  document.getElementById('t-vat').textContent=fmt(total*.19)+' EUR';
+  document.getElementById('t-brutto').textContent=fmt(total*1.19)+' EUR';
+}
+
+// ── claude review ─────────────────────────────────────────────────────────────
+async function doReview(){
+  const btn=document.getElementById('review-btn');
+  btn.disabled=true; btn.innerHTML='<span class="loader"></span> Analiza…';
+
+  const positions=S.positions
+    .filter((_,i)=>{ const v=parseFloat(document.getElementById('pr-'+i)?.value)||0; return v>0; })
+    .map((p,i)=>({
+      posId:p.posId,
+      desc:p.description.substring(0,80),
+      type:p.typeObj.label,
+      m2:p.totalM2,
+      price:parseFloat(document.getElementById('pr-'+i).value)||0,
+      marketPrice:getBaseRate(p.typeObj.id),
+      value:(parseFloat(document.getElementById('pr-'+i).value)||0)*p.totalM2,
+    }));
+
+  let total=0;
+  positions.forEach(p=>total+=p.value);
+
+  // Prepare PDF texts for Claude
+  const pdfContent = Object.entries(S.pdfTexts).map(([name, data]) => ({
+    filename: name,
+    pages: data.pages,
+    text: data.text.substring(0, 4000) // Limit per file
+  }));
+
+  const payload={
+    positions,
+    totals:{netto:total.toFixed(2), vat:(total*.19).toFixed(2), brutto:(total*1.19).toFixed(2)},
+    projectInfo: S.projectName || S.wb?.SheetNames?.[0] || 'Projekt montażowy',
+    marketRates: S.liveRates,
+    pdfDocuments: pdfContent,
+  };
+
+  try {
+    const res=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.error) throw new Error(data.error);
+    showReview(data.review);
+  } catch(e){
+    showReview('**Błąd analizy:** '+e.message);
+  }
+  btn.disabled=false; btn.textContent='Analiza z Claude';
+}
+
+function showReview(md){
+  const panel=document.getElementById('review-panel');
+  const body=document.getElementById('review-body');
+  // simple markdown → html
+  let html=md
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^• (.+)$/gm,'<li>$1</li>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/\n/g,'<br>');
+  if(!html.startsWith('<')) html='<p>'+html+'</p>';
+  body.innerHTML=html;
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth'});
+}
+
+// ── excel export ──────────────────────────────────────────────────────────────
+function exportXlsx(){
+  let wb, ws;
+  
+  // If we have original workbook (from Excel upload), modify it
+  if (S.wb) {
+    wb = S.wb;
+    ws = wb.Sheets[wb.SheetNames[0]];
+    const cm = S.colMap;
+    
+    S.positions.forEach((p,i) => {
+      const price = parseFloat(document.getElementById('pr-'+i).value) || 0;
+      p.subItems.forEach(sub => {
+        if (cm.preis !== undefined && sub.excelRow > 0) {
+          const a = XLSX.utils.encode_cell({r:sub.excelRow-1, c:cm.preis});
+          ws[a] = {v:price, t:'n', z:'#,##0.00'}; extRange(ws,a);
+        }
+        if (cm.angebot !== undefined && sub.m2 && sub.excelRow > 0) {
+          const a = XLSX.utils.encode_cell({r:sub.excelRow-1, c:cm.angebot});
+          ws[a] = {v:parseFloat((price*sub.m2).toFixed(2)), t:'n', z:'#,##0.00'}; extRange(ws,a);
+        }
+      });
+    });
+    
+    // total
+    if (cm.angebot !== undefined) {
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      rows.forEach((row,ri) => {
+        if (row.some(c => String(c).includes('Angebotssumme'))) {
+          const refs = S.positions.flatMap(p => p.subItems.filter(si => si.m2 && si.excelRow > 0).map(si => XLSX.utils.encode_cell({r:si.excelRow-1, c:cm.angebot})));
+          if (refs.length) { const a = XLSX.utils.encode_cell({r:ri, c:cm.angebot}); ws[a] = {f:refs.join('+'), t:'n'}; extRange(ws,a); }
+        }
+      });
+    }
+  } else {
+    // Create new workbook from scratch (PDF-based positions)
+    wb = XLSX.utils.book_new();
+    
+    const headers = ['Pos.', 'Beschreibung', 'Typ', 'm² Gesamt', 'Preis EUR/m²', 'Angebotswert EUR'];
+    const data = [headers];
+    
+    let totalValue = 0;
+    S.positions.forEach((p, i) => {
+      const price = parseFloat(document.getElementById('pr-'+i).value) || 0;
+      const value = price * p.totalM2;
+      totalValue += value;
+      data.push([
+        p.posId,
+        p.description,
+        p.typeObj.label,
+        p.totalM2,
+        price,
+        value
+      ]);
+    });
+    
+    // Add totals
+    data.push([]);
+    data.push(['', '', '', '', 'Summe netto:', totalValue]);
+    data.push(['', '', '', '', 'MwSt 19%:', totalValue * 0.19]);
+    data.push(['', '', '', '', 'Summe brutto:', totalValue * 1.19]);
+    
+    ws = XLSX.utils.aoa_to_sheet(data);
+    
+    // Set column widths
+    ws['!cols'] = [
+      {wch: 8},   // Pos
+      {wch: 50},  // Beschreibung
+      {wch: 20},  // Typ
+      {wch: 12},  // m²
+      {wch: 14},  // Preis
+      {wch: 16},  // Angebotswert
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, S.projectName || 'Wycena');
+  }
+  
+  const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const url = URL.createObjectURL(new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  const filename = S.projectName 
+    ? `${S.projectName}_Wycena_${new Date().toISOString().slice(0,10)}.xlsx`
+    : `LV_Wycena_${new Date().toISOString().slice(0,10)}.xlsx`;
+  const a = Object.assign(document.createElement('a'), {href:url, download:filename});
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function extRange(ws,addr){
+  if(!ws['!ref']) return;
+  const r=XLSX.utils.decode_range(ws['!ref']),c=XLSX.utils.decode_cell(addr);
+  r.e.r=Math.max(r.e.r,c.r); r.e.c=Math.max(r.e.c,c.c);
+  r.s.r=Math.min(r.s.r,c.r); r.s.c=Math.min(r.s.c,c.c);
+  ws['!ref']=XLSX.utils.encode_range(r);
+}
+
+function resetApp(){
+  S.wb=null; S.positions=[]; S.customPrices={}; S.pdfTexts={}; S.projectName=null;
+  document.getElementById('app-main').style.display='none';
+  document.getElementById('lv-input').value='';
+  document.getElementById('pdf-input').value='';
+  document.getElementById('parse-status').className='status';
+  document.getElementById('pdf-status').className='status';
+  document.getElementById('pdf-list').innerHTML='';
+  document.getElementById('pdf-actions').style.display='none';
+  document.getElementById('review-panel').style.display='none';
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+updateMarkupDisp();
+buildRatesGrid({});  // build with defaults first
+fetchLiveRates();    // then fetch live (async, updates grid when done)
+</script>
+</body>
+</html>
