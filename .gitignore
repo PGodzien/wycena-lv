@@ -1,3 +1,9 @@
 node_modules/
 .env
 .vercel/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+pricing_tool/plany/
