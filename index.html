@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -44,6 +46,13 @@ body { font-family: var(--font-ui); color: var(--black); background: var(--white
 .upload-zone input { display: none; }
 .upload-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .upload-hint { font-size: 12px; color: var(--gray-500); }
+
+/* pdf list */
+.pdf-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: var(--border); background: var(--gray-50); margin-bottom: 6px; font-size: 12px; }
+.pdf-item .pdf-name { flex: 1; font-family: var(--font-mono); font-size: 11px; color: var(--gray-700); }
+.pdf-item .pdf-pages { font-size: 10px; color: var(--gray-500); }
+.pdf-item .pdf-remove { background: none; border: none; color: var(--gray-500); cursor: pointer; font-size: 14px; padding: 2px 6px; }
+.pdf-item .pdf-remove:hover { color: #8b0000; }
 
 /* settings */
 .toggle-btn { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); cursor: pointer; border: none; background: none; display: flex; align-items: center; gap: 6px; padding: 6px 0; }
@@ -188,6 +197,19 @@ td select:focus { border-color: var(--black); }
     <div class="upload-hint">Plik Leistungsverzeichnis z kolumnami: Pos., Breite, Höhe, m² Gesamt</div>
   </div>
   <div class="status" id="parse-status" style="margin-top:8px;"></div>
+
+  <!-- PDF upload -->
+  <div class="slabel" style="margin-top:20px;">Rysunki techniczne (PDF, opcjonalne)</div>
+  <div class="upload-zone" id="pdf-drop-zone"
+       onclick="document.getElementById('pdf-input').click()"
+       ondragover="onPdfOver(event)" ondragleave="onPdfLeave(event)" ondrop="onPdfDrop(event)"
+       style="padding:32px 24px;">
+    <input type="file" id="pdf-input" accept=".pdf" multiple onchange="onPdfFile(event)">
+    <div class="upload-title">Dodaj pliki PDF z rysunkami</div>
+    <div class="upload-hint">Plany montażowe, szczegóły techniczne — Claude uwzględni je w analizie</div>
+  </div>
+  <div id="pdf-list" style="margin-top:8px;"></div>
+  <div class="status" id="pdf-status" style="margin-top:8px;"></div>
 </div>
 
 <!-- ── main ── -->
@@ -255,7 +277,7 @@ const TYPES = [
 ];
 
 // ── state ─────────────────────────────────────────────────────────────────────
-const S = { wb:null, colMap:{}, positions:[], liveRates:{} };
+const S = { wb:null, colMap:{}, positions:[], liveRates:{}, pdfTexts:{} };
 
 // ── utils ─────────────────────────────────────────────────────────────────────
 const pn = v => { const s=String(v||'').replace(/[^\d.,]/g,'').replace(',','.'); const n=parseFloat(s); return isNaN(n)?null:n; };
@@ -344,6 +366,61 @@ function onOver(e) { e.preventDefault(); document.getElementById('drop-zone').cl
 function onLeave()  { document.getElementById('drop-zone').classList.remove('over'); }
 function onDrop(e)  { e.preventDefault(); onLeave(); const f=e.dataTransfer.files[0]; if(f) processFile(f); }
 function onFile(e)  { const f=e.target.files[0]; if(f) processFile(f); }
+
+// ── PDF drag & drop ───────────────────────────────────────────────────────────
+function onPdfOver(e) { e.preventDefault(); document.getElementById('pdf-drop-zone').classList.add('over'); }
+function onPdfLeave() { document.getElementById('pdf-drop-zone').classList.remove('over'); }
+function onPdfDrop(e) { e.preventDefault(); onPdfLeave(); const files=Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf'); if(files.length) processPdfs(files); }
+function onPdfFile(e) { const files=Array.from(e.target.files); if(files.length) processPdfs(files); }
+
+async function processPdfs(files) {
+  const status = document.getElementById('pdf-status');
+  status.className = 'status show'; status.textContent = `Wczytywanie ${files.length} PDF...`;
+  
+  for (const file of files) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n\n';
+      }
+      S.pdfTexts[file.name] = { text: text.trim(), pages: pdf.numPages };
+    } catch(e) {
+      S.pdfTexts[file.name] = { text: `Błąd odczytu: ${e.message}`, pages: 0 };
+    }
+  }
+  
+  renderPdfList();
+  status.className = 'status show ok';
+  status.textContent = `Wczytano ${Object.keys(S.pdfTexts).length} plik(ów) PDF.`;
+  document.getElementById('pdf-input').value = '';
+}
+
+function renderPdfList() {
+  const list = document.getElementById('pdf-list');
+  list.innerHTML = '';
+  Object.entries(S.pdfTexts).forEach(([name, data]) => {
+    const div = document.createElement('div');
+    div.className = 'pdf-item';
+    div.innerHTML = `
+      <span class="pdf-name">${esc(name)}</span>
+      <span class="pdf-pages">${data.pages} str.</span>
+      <button class="pdf-remove" onclick="removePdf('${esc(name)}')" title="Usuń">✕</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function removePdf(name) {
+  delete S.pdfTexts[name];
+  renderPdfList();
+  if (Object.keys(S.pdfTexts).length === 0) {
+    document.getElementById('pdf-status').className = 'status';
+  }
+}
 
 // ── file processing ───────────────────────────────────────────────────────────
 function setStatus(id, msg, cls='') {
@@ -526,11 +603,19 @@ async function doReview(){
   let total=0;
   positions.forEach(p=>total+=p.value);
 
+  // Prepare PDF texts for Claude
+  const pdfContent = Object.entries(S.pdfTexts).map(([name, data]) => ({
+    filename: name,
+    pages: data.pages,
+    text: data.text.substring(0, 4000) // Limit per file
+  }));
+
   const payload={
     positions,
     totals:{netto:total.toFixed(2), vat:(total*.19).toFixed(2), brutto:(total*1.19).toFixed(2)},
     projectInfo: S.wb?.SheetNames?.[0] || 'Projekt montażowy',
     marketRates: S.liveRates,
+    pdfDocuments: pdfContent,
   };
 
   try {
@@ -605,10 +690,13 @@ function extRange(ws,addr){
 }
 
 function resetApp(){
-  S.wb=null; S.positions=[]; S.customPrices={};
+  S.wb=null; S.positions=[]; S.customPrices={}; S.pdfTexts={};
   document.getElementById('app-main').style.display='none';
   document.getElementById('lv-input').value='';
+  document.getElementById('pdf-input').value='';
   document.getElementById('parse-status').className='status';
+  document.getElementById('pdf-status').className='status';
+  document.getElementById('pdf-list').innerHTML='';
   document.getElementById('review-panel').style.display='none';
 }
 
