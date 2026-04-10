@@ -188,7 +188,7 @@ td select:focus { border-color: var(--black); }
   </div>
 
   <!-- upload -->
-  <div class="slabel">Plik LV (Excel)</div>
+  <div class="slabel">Opcja 1: Plik LV (Excel)</div>
   <div class="upload-zone" id="drop-zone"
        onclick="document.getElementById('lv-input').click()"
        ondragover="onOver(event)" ondragleave="onLeave(event)" ondrop="onDrop(event)">
@@ -199,17 +199,22 @@ td select:focus { border-color: var(--black); }
   <div class="status" id="parse-status" style="margin-top:8px;"></div>
 
   <!-- PDF upload -->
-  <div class="slabel" style="margin-top:20px;">Rysunki techniczne (PDF, opcjonalne)</div>
+  <div class="slabel" style="margin-top:20px;">Opcja 2: Rysunki techniczne (PDF)</div>
   <div class="upload-zone" id="pdf-drop-zone"
        onclick="document.getElementById('pdf-input').click()"
        ondragover="onPdfOver(event)" ondragleave="onPdfLeave(event)" ondrop="onPdfDrop(event)"
        style="padding:32px 24px;">
     <input type="file" id="pdf-input" accept=".pdf" multiple onchange="onPdfFile(event)">
-    <div class="upload-title">Dodaj pliki PDF z rysunkami</div>
-    <div class="upload-hint">Plany montażowe, szczegóły techniczne — Claude uwzględni je w analizie</div>
+    <div class="upload-title">Dodaj pliki PDF z planami</div>
+    <div class="upload-hint">Claude przeanalizuje rysunki i automatycznie wyciągnie pozycje do wyceny</div>
   </div>
   <div id="pdf-list" style="margin-top:8px;"></div>
   <div class="status" id="pdf-status" style="margin-top:8px;"></div>
+  <div id="pdf-actions" style="margin-top:12px; display:none;">
+    <button class="btn btn-primary" onclick="analyzePdfAndCreate()" id="analyze-pdf-btn">
+      Analizuj PDF i utwórz wycenę
+    </button>
+  </div>
 </div>
 
 <!-- ── main ── -->
@@ -401,7 +406,10 @@ async function processPdfs(files) {
 
 function renderPdfList() {
   const list = document.getElementById('pdf-list');
+  const actions = document.getElementById('pdf-actions');
   list.innerHTML = '';
+  const pdfCount = Object.keys(S.pdfTexts).length;
+  
   Object.entries(S.pdfTexts).forEach(([name, data]) => {
     const div = document.createElement('div');
     div.className = 'pdf-item';
@@ -412,6 +420,9 @@ function renderPdfList() {
     `;
     list.appendChild(div);
   });
+  
+  // Show/hide analyze button
+  actions.style.display = pdfCount > 0 ? 'block' : 'none';
 }
 
 function removePdf(name) {
@@ -420,6 +431,76 @@ function removePdf(name) {
   if (Object.keys(S.pdfTexts).length === 0) {
     document.getElementById('pdf-status').className = 'status';
   }
+}
+
+// ── PDF analysis - create quote from drawings ─────────────────────────────────
+async function analyzePdfAndCreate() {
+  const btn = document.getElementById('analyze-pdf-btn');
+  const status = document.getElementById('pdf-status');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Claude analizuje rysunki...';
+  status.className = 'status show';
+  status.textContent = 'Wysyłanie do Claude — może potrwać do 30 sekund...';
+
+  const pdfContent = Object.entries(S.pdfTexts).map(([filename, data]) => ({
+    filename,
+    pages: data.pages,
+    text: data.text.substring(0, 8000) // More text for analysis
+  }));
+
+  try {
+    const res = await fetch('/api/parse-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfTexts: pdfContent })
+    });
+    
+    const data = await res.json();
+    
+    if (data.error) throw new Error(data.error);
+    if (!data.positions || data.positions.length === 0) {
+      throw new Error(data.summary || 'Nie znaleziono pozycji w dokumentach');
+    }
+
+    // Convert Claude positions to app format
+    S.positions = data.positions.map(p => {
+      const typeObj = TYPES.find(t => t.id === p.type) || TYPES.at(-1);
+      const m2 = p.m2 || (p.breite && p.hoehe ? (p.breite * p.hoehe / 1000000) : 1);
+      const totalM2 = m2 * (p.menge || 1);
+      
+      return {
+        posId: p.posId,
+        description: p.description + (p.notes ? ` (${p.notes})` : ''),
+        typeObj,
+        totalM2,
+        subItems: [{ excelRow: 0, m2: totalM2, breite: p.breite, hoehe: p.hoehe }],
+        fromPdf: true
+      };
+    });
+
+    S.customPrices = {};
+    S.projectName = data.projectName;
+    
+    status.className = 'status show ok';
+    status.innerHTML = `<strong>Znaleziono ${S.positions.length} pozycji!</strong> ${data.summary || ''}`;
+    
+    // Show special queries if any
+    if (data.perplexityQueries && data.perplexityQueries.length > 0) {
+      console.log('Suggested Perplexity queries:', data.perplexityQueries);
+    }
+
+    render();
+    document.getElementById('app-main').style.display = 'block';
+    document.getElementById('app-main').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (e) {
+    status.className = 'status show err';
+    status.textContent = 'Błąd analizy: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Analizuj PDF i utwórz wycenę';
 }
 
 // ── file processing ───────────────────────────────────────────────────────────
@@ -613,7 +694,7 @@ async function doReview(){
   const payload={
     positions,
     totals:{netto:total.toFixed(2), vat:(total*.19).toFixed(2), brutto:(total*1.19).toFixed(2)},
-    projectInfo: S.wb?.SheetNames?.[0] || 'Projekt montażowy',
+    projectInfo: S.projectName || S.wb?.SheetNames?.[0] || 'Projekt montażowy',
     marketRates: S.liveRates,
     pdfDocuments: pdfContent,
   };
@@ -649,35 +730,87 @@ function showReview(md){
 
 // ── excel export ──────────────────────────────────────────────────────────────
 function exportXlsx(){
-  if(!S.wb) return;
-  const ws=S.wb.Sheets[S.wb.SheetNames[0]];
-  const cm=S.colMap;
-  S.positions.forEach((p,i)=>{
-    const price=parseFloat(document.getElementById('pr-'+i).value)||0;
-    p.subItems.forEach(sub=>{
-      if(cm.preis!==undefined){
-        const a=XLSX.utils.encode_cell({r:sub.excelRow-1,c:cm.preis});
-        ws[a]={v:price,t:'n',z:'#,##0.00'}; extRange(ws,a);
-      }
-      if(cm.angebot!==undefined&&sub.m2){
-        const a=XLSX.utils.encode_cell({r:sub.excelRow-1,c:cm.angebot});
-        ws[a]={v:parseFloat((price*sub.m2).toFixed(2)),t:'n',z:'#,##0.00'}; extRange(ws,a);
-      }
+  let wb, ws;
+  
+  // If we have original workbook (from Excel upload), modify it
+  if (S.wb) {
+    wb = S.wb;
+    ws = wb.Sheets[wb.SheetNames[0]];
+    const cm = S.colMap;
+    
+    S.positions.forEach((p,i) => {
+      const price = parseFloat(document.getElementById('pr-'+i).value) || 0;
+      p.subItems.forEach(sub => {
+        if (cm.preis !== undefined && sub.excelRow > 0) {
+          const a = XLSX.utils.encode_cell({r:sub.excelRow-1, c:cm.preis});
+          ws[a] = {v:price, t:'n', z:'#,##0.00'}; extRange(ws,a);
+        }
+        if (cm.angebot !== undefined && sub.m2 && sub.excelRow > 0) {
+          const a = XLSX.utils.encode_cell({r:sub.excelRow-1, c:cm.angebot});
+          ws[a] = {v:parseFloat((price*sub.m2).toFixed(2)), t:'n', z:'#,##0.00'}; extRange(ws,a);
+        }
+      });
     });
-  });
-  // total
-  if(cm.angebot!==undefined){
-    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    rows.forEach((row,ri)=>{
-      if(row.some(c=>String(c).includes('Angebotssumme'))){
-        const refs=S.positions.flatMap(p=>p.subItems.filter(si=>si.m2).map(si=>XLSX.utils.encode_cell({r:si.excelRow-1,c:cm.angebot})));
-        if(refs.length){ const a=XLSX.utils.encode_cell({r:ri,c:cm.angebot}); ws[a]={f:refs.join('+'),t:'n'}; extRange(ws,a); }
-      }
+    
+    // total
+    if (cm.angebot !== undefined) {
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      rows.forEach((row,ri) => {
+        if (row.some(c => String(c).includes('Angebotssumme'))) {
+          const refs = S.positions.flatMap(p => p.subItems.filter(si => si.m2 && si.excelRow > 0).map(si => XLSX.utils.encode_cell({r:si.excelRow-1, c:cm.angebot})));
+          if (refs.length) { const a = XLSX.utils.encode_cell({r:ri, c:cm.angebot}); ws[a] = {f:refs.join('+'), t:'n'}; extRange(ws,a); }
+        }
+      });
+    }
+  } else {
+    // Create new workbook from scratch (PDF-based positions)
+    wb = XLSX.utils.book_new();
+    
+    const headers = ['Pos.', 'Beschreibung', 'Typ', 'm² Gesamt', 'Preis EUR/m²', 'Angebotswert EUR'];
+    const data = [headers];
+    
+    let totalValue = 0;
+    S.positions.forEach((p, i) => {
+      const price = parseFloat(document.getElementById('pr-'+i).value) || 0;
+      const value = price * p.totalM2;
+      totalValue += value;
+      data.push([
+        p.posId,
+        p.description,
+        p.typeObj.label,
+        p.totalM2,
+        price,
+        value
+      ]);
     });
+    
+    // Add totals
+    data.push([]);
+    data.push(['', '', '', '', 'Summe netto:', totalValue]);
+    data.push(['', '', '', '', 'MwSt 19%:', totalValue * 0.19]);
+    data.push(['', '', '', '', 'Summe brutto:', totalValue * 1.19]);
+    
+    ws = XLSX.utils.aoa_to_sheet(data);
+    
+    // Set column widths
+    ws['!cols'] = [
+      {wch: 8},   // Pos
+      {wch: 50},  // Beschreibung
+      {wch: 20},  // Typ
+      {wch: 12},  // m²
+      {wch: 14},  // Preis
+      {wch: 16},  // Angebotswert
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, S.projectName || 'Wycena');
   }
-  const out=XLSX.write(S.wb,{bookType:'xlsx',type:'array'});
-  const url=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-  const a=Object.assign(document.createElement('a'),{href:url,download:`LV_Wycena_${new Date().toISOString().slice(0,10)}.xlsx`});
+  
+  const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const url = URL.createObjectURL(new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  const filename = S.projectName 
+    ? `${S.projectName}_Wycena_${new Date().toISOString().slice(0,10)}.xlsx`
+    : `LV_Wycena_${new Date().toISOString().slice(0,10)}.xlsx`;
+  const a = Object.assign(document.createElement('a'), {href:url, download:filename});
   a.click(); URL.revokeObjectURL(url);
 }
 
@@ -690,13 +823,14 @@ function extRange(ws,addr){
 }
 
 function resetApp(){
-  S.wb=null; S.positions=[]; S.customPrices={}; S.pdfTexts={};
+  S.wb=null; S.positions=[]; S.customPrices={}; S.pdfTexts={}; S.projectName=null;
   document.getElementById('app-main').style.display='none';
   document.getElementById('lv-input').value='';
   document.getElementById('pdf-input').value='';
   document.getElementById('parse-status').className='status';
   document.getElementById('pdf-status').className='status';
   document.getElementById('pdf-list').innerHTML='';
+  document.getElementById('pdf-actions').style.display='none';
   document.getElementById('review-panel').style.display='none';
 }
 
