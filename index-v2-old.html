@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wycena LV — Montaż okien aluminiowych</title>
+<title>Wycena LV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -22,7 +22,6 @@
   --gray-50:  #f8f8f8;
   --white: #fff;
   --accent: #1a5fb4;
-  --green: #2a6f2a;
   --border: 1px solid #e0e0e0;
   --border-strong: 1px solid #aaa;
   --font-ui: 'DM Sans', sans-serif;
@@ -39,35 +38,33 @@ body { font-family: var(--font-ui); color: var(--black); background: var(--white
 
 /* steps indicator */
 .steps { display: flex; gap: 0; margin-bottom: 32px; border: var(--border); }
-.step { flex: 1; padding: 12px 16px; background: var(--gray-50); border-right: var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background .15s; }
+.step { flex: 1; padding: 12px 16px; background: var(--gray-50); border-right: var(--border); display: flex; align-items: center; gap: 10px; cursor: default; }
 .step:last-child { border-right: none; }
-.step:hover { background: var(--gray-100); }
 .step.active { background: var(--black); color: var(--white); }
 .step.done { background: #f0fff0; }
 .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--gray-300); color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
 .step.active .step-num { background: var(--white); color: var(--black); }
-.step.done .step-num { background: var(--green); color: var(--white); }
+.step.done .step-num { background: #2a6f2a; color: var(--white); }
 .step-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* section label */
-.slabel { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gray-500); padding-bottom: 8px; border-bottom: var(--border); margin-bottom: 16px; }
-.slabel-big { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--black); }
+.slabel { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gray-500); padding-bottom: 8px; border-bottom: var(--border); margin-bottom: 16px; margin-top: 28px; }
 
 /* upload */
-.upload-zone { border: 2px dashed var(--gray-300); padding: 40px 24px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; background: var(--gray-50); }
+.upload-zone { border: 2px dashed var(--gray-300); padding: 48px 24px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; background: var(--gray-50); }
 .upload-zone:hover, .upload-zone.over { border-color: var(--black); background: var(--gray-100); }
 .upload-zone.disabled { opacity: 0.5; pointer-events: none; }
 .upload-zone input { display: none; }
 .upload-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .upload-hint { font-size: 12px; color: var(--gray-500); }
 
-/* file list */
+/* pdf/file list */
 .file-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: var(--border); background: var(--gray-50); margin-bottom: 6px; font-size: 12px; }
-.file-item .file-name { flex: 1; font-family: var(--font-mono); font-size: 11px; color: var(--gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.file-item .file-info { font-size: 10px; color: var(--gray-500); white-space: nowrap; }
+.file-item .file-name { flex: 1; font-family: var(--font-mono); font-size: 11px; color: var(--gray-700); }
+.file-item .file-info { font-size: 10px; color: var(--gray-500); }
 .file-item .file-remove { background: none; border: none; color: var(--gray-500); cursor: pointer; font-size: 14px; padding: 2px 6px; }
 .file-item .file-remove:hover { color: #8b0000; }
-.file-item.ok { border-color: var(--green); background: #f8fff8; }
+.file-item.ok { border-color: #2a6f2a; background: #f8fff8; }
 
 /* settings */
 .toggle-btn { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); cursor: pointer; border: none; background: none; display: flex; align-items: center; gap: 6px; padding: 6px 0; }
@@ -91,17 +88,15 @@ body { font-family: var(--font-ui); color: var(--black); background: var(--white
 .btn-primary:hover { background: #333; }
 .btn-accent { background: var(--accent); color: var(--white); border-color: var(--accent); }
 .btn-accent:hover { background: #154a8f; }
-.btn-green { background: var(--green); color: var(--white); border-color: var(--green); }
-.btn-green:hover { background: #1f5a1f; }
 .btn-sm { padding: 5px 12px; font-size: 10px; }
 .btn:disabled { opacity: .35; pointer-events: none; }
 
 /* status */
-.status { font-size: 12px; padding: 10px 14px; border-left: 3px solid var(--black); background: var(--gray-50); color: var(--gray-700); display: none; margin-top: 12px; }
+.status { font-size: 12px; padding: 10px 14px; border-left: 3px solid var(--black); background: var(--gray-50); color: var(--gray-700); display: none; }
 .status.show { display: block; }
-.status.ok { border-left-color: var(--green); background: #f0fff0; }
+.status.ok  { border-left-color: #2a6f2a; background: #f0fff0; }
 .status.err { border-left-color: #8b0000; background: #fff0f0; }
-.status.warn { border-left-color: #7a5c00; background: #fffbf0; }
+.status.warn{ border-left-color: #7a5c00; background: #fffbf0; }
 
 /* loader */
 .loader { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--gray-300); border-top-color: var(--black); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
@@ -116,12 +111,12 @@ tbody tr { border-bottom: var(--border); }
 tbody tr:hover { background: var(--gray-50); }
 tbody td { padding: 9px 10px; vertical-align: middle; }
 .td-pos { font-family: var(--font-mono); font-size: 11px; font-weight: 500; white-space: nowrap; }
-.td-desc { color: var(--gray-700); max-width: 200px; }
+.td-desc { color: var(--gray-700); max-width: 220px; }
 .td-num { font-family: var(--font-mono); font-size: 11px; text-align: right; white-space: nowrap; }
 .td-val { font-family: var(--font-mono); font-size: 12px; font-weight: 500; text-align: right; white-space: nowrap; }
-.td-price input { font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 5px 8px; border: var(--border-strong); width: 80px; text-align: right; background: var(--white); color: var(--black); outline: none; border-radius: 0; }
+.td-price input { font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 5px 8px; border: var(--border-strong); width: 88px; text-align: right; background: var(--white); color: var(--black); outline: none; border-radius: 0; }
 .td-price input:focus { border-color: var(--black); }
-td select { font-family: var(--font-ui); font-size: 11px; padding: 3px 6px; border: var(--border); background: var(--white); color: var(--gray-700); max-width: 140px; border-radius: 0; outline: none; }
+td select { font-family: var(--font-ui); font-size: 11px; padding: 3px 6px; border: var(--border); background: var(--white); color: var(--gray-700); max-width: 150px; border-radius: 0; outline: none; }
 td select:focus { border-color: var(--black); }
 
 /* totals */
@@ -164,14 +159,6 @@ td select:focus { border-color: var(--black); }
 .step-panel { display: none; }
 .step-panel.active { display: block; }
 
-/* two column layout */
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px; }
-@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
-
-/* info box */
-.info-box { background: #f0f7ff; border: 1px solid #b3d4fc; padding: 12px 16px; font-size: 12px; color: #1a4a7a; margin-bottom: 16px; }
-.info-box strong { font-weight: 600; }
-
 /* print */
 @media print {
   .no-print { display: none !important; }
@@ -197,84 +184,87 @@ td select:focus { border-color: var(--black); }
 
 <!-- ── steps indicator ── -->
 <div class="steps no-print" id="steps-bar">
-  <div class="step active" data-step="1" onclick="goToStep(1)">
+  <div class="step active" data-step="1">
     <span class="step-num">1</span>
-    <span class="step-label">Excel LV</span>
-  </div>
-  <div class="step" data-step="2" onclick="goToStep(2)">
-    <span class="step-num">2</span>
     <span class="step-label">Rysunki PDF</span>
   </div>
-  <div class="step" data-step="3" onclick="goToStep(3)">
-    <span class="step-num">3</span>
-    <span class="step-label">Stawki</span>
+  <div class="step" data-step="2">
+    <span class="step-num">2</span>
+    <span class="step-label">Szablon Excel</span>
   </div>
-  <div class="step" data-step="4" onclick="goToStep(4)">
+  <div class="step" data-step="3">
+    <span class="step-num">3</span>
+    <span class="step-label">Stawki rynkowe</span>
+  </div>
+  <div class="step" data-step="4">
     <span class="step-num">4</span>
     <span class="step-label">Wycena</span>
   </div>
+  <div class="step" data-step="5">
+    <span class="step-num">5</span>
+    <span class="step-label">Eksport</span>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- STEP 1: Excel LV Upload -->
+<!-- STEP 1: PDF Upload -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="step-panel active" id="panel-1">
-  <div class="slabel">Krok 1: Wgraj plik Excel LV</div>
-  
-  <div class="info-box">
-    <strong>Leistungsverzeichnis (LV)</strong> — to Twoje główne źródło pozycji do wyceny. 
-    Wgraj Excel z listą elementów (okna, drzwi, HST), a aplikacja rozpozna strukturę.
-  </div>
-  
-  <div class="upload-zone" id="excel-drop-zone"
-       onclick="document.getElementById('excel-input').click()"
-       ondragover="onExcelOver(event)" ondragleave="onExcelLeave(event)" ondrop="onExcelDrop(event)">
-    <input type="file" id="excel-input" accept=".xlsx,.xls" onchange="onExcelFile(event)">
-    <div class="upload-title">Kliknij lub upuść plik Excel (.xlsx)</div>
-    <div class="upload-hint">Szablon LV z pozycjami: Pos., Beschreibung, Breite, Höhe, m², Preis</div>
-  </div>
-  
-  <div id="excel-info" style="margin-top:12px;"></div>
-  <div class="status" id="excel-status"></div>
-  
-  <div class="action-bar">
-    <button class="btn btn-primary" onclick="goToStep(2)" id="to-pdf-btn" disabled>
-      Dalej: Rysunki PDF →
-    </button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- STEP 2: PDF Drawings -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div class="step-panel" id="panel-2">
-  <div class="slabel">Krok 2: Wgraj rysunki techniczne (opcjonalnie)</div>
-  
-  <div class="info-box">
-    <strong>Rysunki techniczne</strong> pomagają Claude rozpoznać szczegóły: Tiptronic, RC2, szklenie, wymiary.
-    To kontekst do wyceny — nie są wymagane jeśli masz kompletne LV.
-  </div>
-  
-  <div id="excel-summary" style="margin-bottom:16px;"></div>
+  <div class="slabel">Krok 1: Wgraj rysunki techniczne (PDF)</div>
+  <p style="font-size:12px;color:var(--gray-500);margin-bottom:16px;">
+    Wgraj plany montażowe, rzuty, specyfikacje. Claude przeanalizuje dokumenty i wyciągnie pozycje do wyceny.
+  </p>
   
   <div class="upload-zone" id="pdf-drop-zone"
        onclick="document.getElementById('pdf-input').click()"
        ondragover="onPdfOver(event)" ondragleave="onPdfLeave(event)" ondrop="onPdfDrop(event)">
     <input type="file" id="pdf-input" accept=".pdf" multiple onchange="onPdfFile(event)">
     <div class="upload-title">Kliknij lub upuść pliki PDF</div>
-    <div class="upload-hint">Plany, rysunki techniczne, specyfikacje Schüco itp.</div>
+    <div class="upload-hint">Plany, rysunki techniczne, specyfikacje okien i drzwi</div>
   </div>
   
   <div id="pdf-list" style="margin-top:12px;"></div>
-  <div class="status" id="pdf-status"></div>
+  <div class="status" id="pdf-status" style="margin-top:8px;"></div>
   
-  <div class="action-bar">
-    <button class="btn" onclick="goToStep(1)">← Wstecz</button>
-    <button class="btn btn-green" onclick="analyzeWithClaude()" id="analyze-btn">
-      Analizuj z Claude AI
+  <div style="margin-top:20px; display:flex; gap:10px;">
+    <button class="btn btn-primary" onclick="analyzePdf()" id="analyze-btn" disabled>
+      Analizuj rysunki
     </button>
-    <button class="btn btn-primary" onclick="goToStep(3)" style="margin-left:auto;">
-      Dalej: Stawki →
+    <button class="btn" onclick="skipPdf()" style="margin-left:auto;">
+      Pomiń (mam gotowy Excel LV)
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- STEP 2: Excel Template -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-2">
+  <div class="slabel">Krok 2: Wgraj szablon Excel LV</div>
+  <p style="font-size:12px;color:var(--gray-500);margin-bottom:16px;">
+    Wgraj plik Excel (Leistungsverzeichnis), który chcesz wypełnić. Aplikacja rozpozna strukturę kolumn.
+  </p>
+  
+  <div id="pdf-summary" style="margin-bottom:20px;"></div>
+  
+  <div class="upload-zone" id="excel-drop-zone"
+       onclick="document.getElementById('excel-input').click()"
+       ondragover="onExcelOver(event)" ondragleave="onExcelLeave(event)" ondrop="onExcelDrop(event)">
+    <input type="file" id="excel-input" accept=".xlsx,.xls" onchange="onExcelFile(event)">
+    <div class="upload-title">Kliknij lub upuść plik Excel (.xlsx)</div>
+    <div class="upload-hint">Szablon LV z kolumnami: Pos., Breite, Höhe, Preis/m², Angebotswert</div>
+  </div>
+  
+  <div id="excel-info" style="margin-top:12px;"></div>
+  <div class="status" id="excel-status" style="margin-top:8px;"></div>
+  
+  <div style="margin-top:20px; display:flex; gap:10px;">
+    <button class="btn" onclick="goToStep(1)">← Wstecz</button>
+    <button class="btn btn-primary" onclick="goToStep(3)" id="to-rates-btn" disabled>
+      Dalej: Stawki rynkowe →
+    </button>
+    <button class="btn" onclick="skipExcel()" style="margin-left:auto;" id="skip-excel-btn">
+      Pomiń (wygeneruj nowy Excel)
     </button>
   </div>
 </div>
@@ -284,10 +274,9 @@ td select:focus { border-color: var(--black); }
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="step-panel" id="panel-3">
   <div class="slabel">Krok 3: Stawki rynkowe</div>
-  
-  <div class="info-box">
-    <strong>Perplexity AI</strong> wyszuka aktualne stawki montażowe w Niemczech (NRW) dla typów elementów z Twojego projektu.
-  </div>
+  <p style="font-size:12px;color:var(--gray-500);margin-bottom:16px;">
+    Perplexity AI wyszuka aktualne stawki montażowe dla elementów z Twojego projektu.
+  </p>
   
   <div id="types-to-search" style="margin-bottom:20px;"></div>
   
@@ -309,30 +298,25 @@ td select:focus { border-color: var(--black); }
     </div>
   </div>
   
-  <div class="status" id="rates-status"></div>
+  <div class="status" id="rates-status" style="margin-top:12px;"></div>
   <div id="rates-results" style="margin-top:16px;"></div>
   
-  <div class="action-bar">
+  <div style="margin-top:20px; display:flex; gap:10px;">
     <button class="btn" onclick="goToStep(2)">← Wstecz</button>
-    <button class="btn btn-accent" onclick="fetchRates()" id="fetch-rates-btn">
+    <button class="btn btn-accent" onclick="fetchRatesForProject()" id="fetch-rates-btn">
       Szukaj stawek w Perplexity
     </button>
-    <button class="btn btn-primary" onclick="goToStep(4)" style="margin-left:auto;">
+    <button class="btn btn-primary" onclick="goToStep(4)" id="to-quote-btn" style="margin-left:auto;">
       Dalej: Wycena →
     </button>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- STEP 4: Quote + Export -->
+<!-- STEP 4: Quote -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="step-panel" id="panel-4">
-  <div class="slabel">Krok 4: Wycena i eksport</div>
-  
-  <div class="field" style="max-width:400px; margin-bottom:16px;">
-    <label>Nazwa projektu</label>
-    <input type="text" id="project-name" placeholder="np. Aprikari Oepen — Krefeld">
-  </div>
+  <div class="slabel">Krok 4: Wycena</div>
   
   <div class="tbl-wrap">
     <table>
@@ -341,10 +325,10 @@ td select:focus { border-color: var(--black); }
           <th>Poz.</th>
           <th>Opis</th>
           <th>Typ</th>
-          <th class="r">m²</th>
-          <th class="r">Rynek €/m²</th>
-          <th class="r">Oferta €/m²</th>
-          <th class="r">Wartość €</th>
+          <th class="r">m² łącznie</th>
+          <th class="r">Rynek EUR/m²</th>
+          <th class="r">Oferta EUR/m²</th>
+          <th class="r">Wartość EUR</th>
         </tr>
       </thead>
       <tbody id="pos-tbody"></tbody>
@@ -366,23 +350,56 @@ td select:focus { border-color: var(--black); }
     </div>
   </div>
   
-  <div class="action-bar">
+  <div style="margin-top:20px; display:flex; gap:10px;">
     <button class="btn" onclick="goToStep(3)">← Wstecz</button>
     <button class="btn" onclick="doReview()" id="review-btn">Analiza Claude</button>
-    <button class="btn btn-primary" onclick="exportXlsx()">Pobierz Excel</button>
-    <button class="btn" onclick="exportCsv()">Pobierz CSV</button>
-    <button class="btn btn-green" onclick="saveToHistory()">Zapisz do historii</button>
+    <button class="btn btn-primary" onclick="goToStep(5)" style="margin-left:auto;">
+      Dalej: Eksport →
+    </button>
   </div>
   
-  <div class="status" id="save-status"></div>
-  
   <div class="review-panel" id="review-panel" style="display:none;">
-    <div class="review-header">Analiza Claude — Weryfikacja wyceny</div>
+    <div class="review-header">Analiza Claude — Inteligentna weryfikacja wyceny</div>
     <div class="review-body" id="review-body"></div>
   </div>
 </div>
 
-<!-- History Panel -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- STEP 5: Export -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-5">
+  <div class="slabel">Krok 5: Eksport i zapis</div>
+  
+  <div id="export-summary" style="margin-bottom:24px;"></div>
+  
+  <div class="field" style="max-width:400px; margin-bottom:20px;">
+    <label>Nazwa projektu</label>
+    <input type="text" id="project-name" placeholder="np. Bauvorhaben Schmidt NRW">
+  </div>
+  
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="exportXlsx()">Pobierz Excel</button>
+    <button class="btn" onclick="exportCsv()">Pobierz CSV</button>
+    <button class="btn" onclick="window.print()">Drukuj</button>
+  </div>
+  
+  <div style="margin-top:24px; padding-top:24px; border-top:var(--border);">
+    <button class="btn btn-accent" onclick="saveToHistory()">Zapisz do historii</button>
+    <span style="font-size:11px; color:var(--gray-500); margin-left:12px;">
+      Projekt zostanie zapisany lokalnie w przeglądarce
+    </span>
+  </div>
+  
+  <div class="status" id="save-status" style="margin-top:12px;"></div>
+  
+  <div style="margin-top:20px;">
+    <button class="btn" onclick="goToStep(4)">← Wstecz do wyceny</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- History Panel (modal-like) -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="history-panel no-print" id="history-panel" style="display:none;">
   <div class="history-header">
     <span>Historia projektów</span>
@@ -398,16 +415,15 @@ td select:focus { border-color: var(--black); }
 // TYPES DATABASE
 // ══════════════════════════════════════════════════════════════════════════════
 const TYPES = [
-  { id:'hst_tip', label:'HST Tiptronic',           kw:['tiptronic','elektrisch','motorisch'],        def:90 },
-  { id:'hst_man', label:'HST manuell',             kw:['hebe-schiebe','schiebbar','hst','ase 80'],   def:65 },
-  { id:'haustuer',label:'Haustür / Eingangstür',   kw:['haustür','haustüranlage','eingangstür'],     def:75 },
-  { id:'dk',      label:'Dreh-Kipp Fenster',       kw:['dreh-kipp','dreh kipp','aws 75'],            def:50 },
-  { id:'fest',    label:'Festelement',             kw:['festelement','festfeld','fest-element','festverglassung','festflügel'], def:38 },
-  { id:'stulp',   label:'Stulpfenster',            kw:['stulp'],                                     def:55 },
-  { id:'brand',   label:'Brandschutz T30/F30',     kw:['brandschutz','t30','f30','ads 80'],          def:115},
-  { id:'raff',    label:'Raffstore / Sonnenschutz',kw:['raffstore','sonnenschutz','warema','e80'],   def:32 },
-  { id:'pfosten', label:'Pfosten-Riegel Fassade',  kw:['pfosten','riegel','fassade','fw 50'],        def:70 },
-  { id:'other',   label:'Sonstige',                kw:[],                                            def:50 },
+  { id:'hst_tip', label:'HST motorisch Tiptronic', kw:['tiptronic','elektrisch schieb','motorisch'],  def:90 },
+  { id:'hst_man', label:'HST manuell',             kw:['hebe-schiebe','schiebbar','hst'],              def:65 },
+  { id:'haustuer',label:'Haustür / Eingangstür',   kw:['haustür','haustüranlage','eingangstür'],       def:75 },
+  { id:'dk',      label:'Dreh-Kipp Fenster',       kw:['dreh-kipp','dreh kipp'],                       def:50 },
+  { id:'fest',    label:'Festelement',             kw:['festelement','festfeld','fest-element','festverglassung'], def:38 },
+  { id:'stulp',   label:'Stulpfenster',            kw:['stulp'],                                       def:55 },
+  { id:'brand',   label:'Brandschutztür T30',      kw:['brandschutz','t30','f30'],                     def:115},
+  { id:'raff',    label:'Sonnenschutz / Raffstore',kw:['raffstore','sonnenschutz','warema'],           def:32 },
+  { id:'other',   label:'Sonstige',                kw:[],                                              def:50 },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -415,11 +431,10 @@ const TYPES = [
 // ══════════════════════════════════════════════════════════════════════════════
 const S = {
   currentStep: 1,
-  excelWb: null,
-  excelFilename: '',
-  excelColMap: {},
   pdfTexts: {},
   positions: [],
+  excelWb: null,
+  excelColMap: {},
   liveRates: {},
   customPrices: {},
   projectName: '',
@@ -428,13 +443,13 @@ const S = {
 // ══════════════════════════════════════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════════════════════════════════════
-const pn = v => { const s=String(v||'').replace(/[^\d.,\-]/g,'').replace(',','.'); const n=parseFloat(s); return isNaN(n)?null:n; };
+const pn = v => { const s=String(v||'').replace(/[^\d.,]/g,'').replace(',','.'); const n=parseFloat(s); return isNaN(n)?null:n; };
 const fmt = (n,d=2) => n==null||isNaN(n)?'—':n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const markup = () => (1+(parseFloat(document.getElementById('overhead').value)||0)/100)*(1+(parseFloat(document.getElementById('margin').value)||0)/100);
 
 function classify(desc) {
-  const d = (desc||'').toLowerCase();
+  const d = desc.toLowerCase();
   for (const t of TYPES) {
     if (t.id==='other') continue;
     if (t.kw.some(k=>d.includes(k))) return t;
@@ -452,14 +467,9 @@ function getBaseRate(typeId) {
 // STEP NAVIGATION
 // ══════════════════════════════════════════════════════════════════════════════
 function goToStep(n) {
-  // Don't allow going forward if no positions
-  if (n > 2 && S.positions.length === 0) {
-    alert('Najpierw wgraj plik Excel LV z pozycjami.');
-    return;
-  }
-  
   S.currentStep = n;
   
+  // Update step indicator
   document.querySelectorAll('.step').forEach(el => {
     const stepNum = parseInt(el.dataset.step);
     el.classList.remove('active', 'done');
@@ -467,25 +477,156 @@ function goToStep(n) {
     else if (stepNum < n) el.classList.add('done');
   });
   
+  // Show correct panel
   document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
   document.getElementById('panel-' + n).classList.add('active');
   
-  if (n === 2) setupStep2();
-  if (n === 3) setupStep3();
+  // Step-specific setup
+  if (n === 3) setupRatesStep();
   if (n === 4) render();
+  if (n === 5) setupExportStep();
   
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// STEP 1: EXCEL LV
+// STEP 1: PDF
+// ══════════════════════════════════════════════════════════════════════════════
+function onPdfOver(e) { e.preventDefault(); document.getElementById('pdf-drop-zone').classList.add('over'); }
+function onPdfLeave() { document.getElementById('pdf-drop-zone').classList.remove('over'); }
+function onPdfDrop(e) { e.preventDefault(); onPdfLeave(); const files=Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf'); if(files.length) processPdfs(files); }
+function onPdfFile(e) { const files=Array.from(e.target.files); if(files.length) processPdfs(files); }
+
+async function processPdfs(files) {
+  const status = document.getElementById('pdf-status');
+  status.className = 'status show'; status.textContent = `Wczytywanie ${files.length} PDF...`;
+  
+  for (const file of files) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n\n';
+      }
+      S.pdfTexts[file.name] = { text: text.trim(), pages: pdf.numPages };
+    } catch(e) {
+      S.pdfTexts[file.name] = { text: `Błąd odczytu: ${e.message}`, pages: 0 };
+    }
+  }
+  
+  renderPdfList();
+  status.className = 'status show ok';
+  status.textContent = `Wczytano ${Object.keys(S.pdfTexts).length} plik(ów) PDF. Kliknij "Analizuj rysunki".`;
+  document.getElementById('pdf-input').value = '';
+  document.getElementById('analyze-btn').disabled = false;
+}
+
+function renderPdfList() {
+  const list = document.getElementById('pdf-list');
+  list.innerHTML = '';
+  
+  Object.entries(S.pdfTexts).forEach(([name, data]) => {
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = `
+      <span class="file-name">${esc(name)}</span>
+      <span class="file-info">${data.pages} str.</span>
+      <button class="file-remove" onclick="removePdf('${esc(name)}')" title="Usuń">✕</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function removePdf(name) {
+  delete S.pdfTexts[name];
+  renderPdfList();
+  if (Object.keys(S.pdfTexts).length === 0) {
+    document.getElementById('pdf-status').className = 'status';
+    document.getElementById('analyze-btn').disabled = true;
+  }
+}
+
+async function analyzePdf() {
+  const btn = document.getElementById('analyze-btn');
+  const status = document.getElementById('pdf-status');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Claude analizuje...';
+  status.className = 'status show';
+  status.textContent = 'Wysyłanie do Claude — może potrwać do 30 sekund...';
+
+  const pdfContent = Object.entries(S.pdfTexts).map(([filename, data]) => ({
+    filename,
+    pages: data.pages,
+    text: data.text.substring(0, 10000)
+  }));
+
+  try {
+    const res = await fetch('/api/parse-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfTexts: pdfContent })
+    });
+    
+    const data = await res.json();
+    
+    if (data.error) throw new Error(data.error);
+    if (!data.positions || data.positions.length === 0) {
+      throw new Error(data.summary || 'Nie znaleziono pozycji w dokumentach');
+    }
+
+    // Convert positions
+    S.positions = data.positions.map(p => {
+      const typeObj = TYPES.find(t => t.id === p.type) || TYPES.at(-1);
+      const m2 = p.m2 || (p.breite && p.hoehe ? (p.breite * p.hoehe / 1000000) : 1);
+      const totalM2 = m2 * (p.menge || 1);
+      
+      return {
+        posId: p.posId,
+        description: p.description + (p.notes ? ` (${p.notes})` : ''),
+        typeObj,
+        totalM2,
+        subItems: [{ excelRow: 0, m2: totalM2, breite: p.breite, hoehe: p.hoehe }],
+        fromPdf: true
+      };
+    });
+
+    S.projectName = data.projectName || '';
+    S.perplexityQueries = data.perplexityQueries || [];
+    
+    status.className = 'status show ok';
+    status.innerHTML = `<strong>Znaleziono ${S.positions.length} pozycji!</strong> ${data.summary || ''}`;
+    
+    // Auto go to step 2
+    setTimeout(() => goToStep(2), 1500);
+
+  } catch (e) {
+    status.className = 'status show err';
+    status.textContent = 'Błąd analizy: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Analizuj rysunki';
+}
+
+function skipPdf() {
+  // Go directly to Excel upload without PDF analysis
+  S.positions = [];
+  goToStep(2);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STEP 2: EXCEL
 // ══════════════════════════════════════════════════════════════════════════════
 function onExcelOver(e) { e.preventDefault(); document.getElementById('excel-drop-zone').classList.add('over'); }
 function onExcelLeave() { document.getElementById('excel-drop-zone').classList.remove('over'); }
-function onExcelDrop(e) { e.preventDefault(); onExcelLeave(); const f=e.dataTransfer.files[0]; if(f) loadExcel(f); }
-function onExcelFile(e) { const f=e.target.files[0]; if(f) loadExcel(f); }
+function onExcelDrop(e) { e.preventDefault(); onExcelLeave(); const f=e.dataTransfer.files[0]; if(f) processExcel(f); }
+function onExcelFile(e) { const f=e.target.files[0]; if(f) processExcel(f); }
 
-function loadExcel(file) {
+function processExcel(file) {
   const status = document.getElementById('excel-status');
   status.className = 'status show'; status.textContent = 'Parsowanie Excel...';
   
@@ -493,32 +634,28 @@ function loadExcel(file) {
   reader.onload = e => {
     try {
       S.excelWb = XLSX.read(e.target.result, {type:'binary'});
+      const result = parseExcelStructure(S.excelWb);
+      
+      if (result.positions && result.positions.length > 0 && S.positions.length === 0) {
+        // If no PDF positions, use Excel positions
+        S.positions = result.positions;
+      }
+      
+      S.excelColMap = result.colMap;
       S.excelFilename = file.name;
       
-      const result = parseExcel(S.excelWb);
-      S.excelColMap = result.colMap;
-      S.positions = result.positions;
-      
-      // Extract project name from filename
-      const nameMatch = file.name.match(/^(.+?)(?:\s*-|\.xlsx?$)/i);
-      if (nameMatch) S.projectName = nameMatch[1].trim();
-      
+      // Show info
       document.getElementById('excel-info').innerHTML = `
         <div class="file-item ok">
           <span class="file-name">${esc(file.name)}</span>
-          <span class="file-info">${S.positions.length} pozycji</span>
+          <span class="file-info">${S.excelWb.SheetNames.length} arkuszy</span>
         </div>
       `;
       
       status.className = 'status show ok';
-      status.innerHTML = `Wczytano <strong>${S.positions.length}</strong> pozycji z Excel.`;
+      status.textContent = `Rozpoznano strukturę: ${Object.keys(S.excelColMap).length} kolumn. ${result.positions?.length || 0} pozycji w Excel.`;
       
-      document.getElementById('to-pdf-btn').disabled = false;
-      
-      if (S.positions.length === 0) {
-        status.className = 'status show warn';
-        status.textContent = 'Nie znaleziono pozycji. Sprawdź czy Excel ma kolumny: Pos., m² Gesamt lub podobne.';
-      }
+      document.getElementById('to-rates-btn').disabled = false;
       
     } catch(err) {
       status.className = 'status show err';
@@ -528,27 +665,24 @@ function loadExcel(file) {
   reader.readAsBinaryString(file);
 }
 
-function parseExcel(wb) {
+function parseExcelStructure(wb) {
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
   
   let hIdx = -1;
   const cm = {};
 
-  // Find header row
-  for(let i = 0; i < Math.min(rows.length, 20); i++) {
-    const j = (rows[i]||[]).join(' ').toLowerCase();
-    if ((j.includes('pos') || j.includes('nr')) && (j.includes('breite') || j.includes('m²') || j.includes('gesamt') || j.includes('beschreib'))) {
+  for(let i = 0; i < rows.length; i++) {
+    const j = rows[i].join(' ').toLowerCase();
+    if ((j.includes('pos') || j.includes('menge')) && (j.includes('breite') || j.includes('gesamt') || j.includes('m²'))) {
       hIdx = i;
       rows[i].forEach((c, k) => {
         const h = String(c).trim().toLowerCase();
-        if (!cm.pos && (h.startsWith('pos') || h === 'nr' || h === 'nr.')) cm.pos = k;
-        if (!cm.desc && (h.includes('beschreib') || h.includes('kurz') || h.includes('text'))) cm.desc = k;
+        if (!cm.pos && h.startsWith('pos')) cm.pos = k;
+        if (!cm.desc && h.includes('kurz')) cm.desc = k;
         if (!cm.breite && h.includes('breite')) cm.breite = k;
         if (!cm.hoehe && (h.includes('höhe') || h.includes('hohe') || h.includes('höh'))) cm.hoehe = k;
-        if (!cm.menge && (h.includes('menge') || h.includes('stück') || h.includes('anz'))) cm.menge = k;
-        if (!cm.m2ges && (h.includes('gesamt') && h.includes('m'))) cm.m2ges = k;
-        if (!cm.m2 && h.match(/^m²$|m2|fläche/)) cm.m2 = k;
+        if (!cm.m2ges && h.includes('gesamt')) cm.m2ges = k;
         if (!cm.preis && h.includes('preis') && h.includes('/')) cm.preis = k;
         if (!cm.angebot && h.includes('angebot')) cm.angebot = k;
       });
@@ -556,214 +690,64 @@ function parseExcel(wb) {
     }
   }
   
-  if (hIdx < 0) {
-    // Try simpler detection
-    for(let i = 0; i < Math.min(rows.length, 10); i++) {
-      if (rows[i] && rows[i].length >= 3) {
-        const first = String(rows[i][0]||'').trim();
-        if (first.match(/^[A-Z]?\d+\.?\d*$|^pos/i)) {
-          hIdx = i - 1;
-          cm.pos = 0;
-          cm.desc = 1;
-          break;
-        }
-      }
-    }
-  }
+  if (hIdx < 0) return { colMap: cm, positions: [] };
   
+  // Set defaults
   if (cm.pos === undefined) cm.pos = 0;
   if (cm.desc === undefined) cm.desc = 1;
   
-  // Parse positions
+  // Parse positions from Excel
   const positions = [];
   let cur = null;
   
   for (let i = hIdx + 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row || row.length === 0) continue;
-    
     const posVal = String(row[cm.pos] || '').trim();
     const descVal = String(row[cm.desc] || '').trim();
-    const m2 = pn(row[cm.m2ges]) || pn(row[cm.m2]);
-    const breite = pn(row[cm.breite]);
-    const hoehe = pn(row[cm.hoehe]);
-    const menge = pn(row[cm.menge]) || 1;
+    const m2 = pn(row[cm.m2ges]);
 
-    // New position starts with pos ID like "F01", "1.1", "01" etc
-    if (posVal && posVal !== 'nan' && posVal.match(/^[A-Z]?\d+\.?\d*$/i)) {
+    if (posVal && posVal !== 'nan' && posVal !== 'NaN') {
       const typeObj = classify(descVal);
-      cur = { 
-        posId: posVal, 
-        description: descVal, 
-        typeObj, 
-        subItems: [],
-        excelRows: [i + 1]
-      };
+      cur = { posId: posVal, description: descVal, typeObj, subItems: [] };
       positions.push(cur);
     }
-    
-    // Continuation of description
-    if (cur && !posVal && descVal && descVal !== 'nan' && descVal.length > 2) {
+    if (cur && !posVal && descVal && descVal !== 'nan') {
       cur.description = (cur.description + ' ' + descVal).trim();
       if (cur.typeObj.id === 'other') cur.typeObj = classify(cur.description);
     }
-    
-    // m² data
     if (cur && m2 && m2 > 0) {
-      cur.subItems.push({ 
-        excelRow: i + 1, 
-        m2, 
-        breite, 
-        hoehe,
-        menge 
-      });
+      cur.subItems.push({ excelRow: i + 1, m2, breite: pn(row[cm.breite]), hoehe: pn(row[cm.hoehe]) });
     }
   }
   
-  // Calculate totals for each position
-  const filtered = positions.map(p => {
-    let totalM2 = 0;
-    if (p.subItems.length > 0) {
-      totalM2 = p.subItems.reduce((s, si) => s + (si.m2 || 0), 0);
-    } else {
-      // Estimate from description or default
-      totalM2 = 2.0;
-    }
-    return { ...p, totalM2 };
-  }).filter(p => p.description.length > 3);
+  const filtered = positions.filter(p => p.subItems.length > 0).map(p => ({
+    ...p,
+    totalM2: p.subItems.reduce((s, si) => s + (si.m2 || 0), 0)
+  }));
   
   return { colMap: cm, positions: filtered };
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// STEP 2: PDF DRAWINGS
-// ══════════════════════════════════════════════════════════════════════════════
-function setupStep2() {
-  document.getElementById('excel-summary').innerHTML = `
-    <div class="file-item ok">
-      <span class="file-name">${esc(S.excelFilename)}</span>
-      <span class="file-info">${S.positions.length} pozycji do wyceny</span>
-    </div>
-  `;
+function skipExcel() {
+  // Continue without Excel template - will generate new one
+  S.excelWb = null;
+  document.getElementById('to-rates-btn').disabled = false;
+  goToStep(3);
 }
 
-function onPdfOver(e) { e.preventDefault(); document.getElementById('pdf-drop-zone').classList.add('over'); }
-function onPdfLeave() { document.getElementById('pdf-drop-zone').classList.remove('over'); }
-function onPdfDrop(e) { e.preventDefault(); onPdfLeave(); const files=Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf'); if(files.length) loadPdfs(files); }
-function onPdfFile(e) { const files=Array.from(e.target.files); if(files.length) loadPdfs(files); }
-
-async function loadPdfs(files) {
-  const status = document.getElementById('pdf-status');
-  status.className = 'status show'; status.textContent = `Wczytywanie ${files.length} PDF...`;
-  
-  for (const file of files) {
-    try {
-      const ab = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({data: ab}).promise;
-      let text = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(' ') + '\n\n';
-      }
-      S.pdfTexts[file.name] = { text: text.trim(), pages: pdf.numPages };
-    } catch(e) {
-      S.pdfTexts[file.name] = { text: '', pages: 0, error: e.message };
-    }
-  }
-  
-  renderPdfList();
-  status.className = 'status show ok';
-  status.textContent = `Wczytano ${Object.keys(S.pdfTexts).length} plik(ów) PDF.`;
-  document.getElementById('pdf-input').value = '';
-}
-
-function renderPdfList() {
-  const list = document.getElementById('pdf-list');
-  list.innerHTML = Object.entries(S.pdfTexts).map(([name, data]) => `
-    <div class="file-item">
-      <span class="file-name">${esc(name)}</span>
-      <span class="file-info">${data.pages} str.</span>
-      <button class="file-remove" onclick="removePdf('${esc(name)}')" title="Usuń">✕</button>
-    </div>
-  `).join('');
-}
-
-function removePdf(name) {
-  delete S.pdfTexts[name];
-  renderPdfList();
-  if (Object.keys(S.pdfTexts).length === 0) {
-    document.getElementById('pdf-status').className = 'status';
-  }
-}
-
-async function analyzeWithClaude() {
-  if (Object.keys(S.pdfTexts).length === 0) {
-    alert('Wgraj najpierw pliki PDF z rysunkami.');
-    return;
-  }
-  
-  const btn = document.getElementById('analyze-btn');
-  const status = document.getElementById('pdf-status');
-  
-  btn.disabled = true;
-  btn.innerHTML = '<span class="loader"></span> Claude analizuje...';
-  status.className = 'status show';
-  status.textContent = 'Wysyłanie do Claude — łączę pozycje z LV ze szczegółami z rysunków...';
-
-  const pdfContent = Object.entries(S.pdfTexts).map(([filename, data]) => ({
-    filename,
-    text: data.text.substring(0, 8000)
-  }));
-
-  const positionsForApi = S.positions.map(p => ({
-    posId: p.posId,
-    description: p.description.substring(0, 100),
-    type: p.typeObj.id,
-    totalM2: p.totalM2
-  }));
-
-  try {
-    const res = await fetch('/api/enrich-positions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ positions: positionsForApi, pdfTexts: pdfContent })
-    });
-    
-    const data = await res.json();
-    
-    if (data.error) throw new Error(data.error);
-    
-    // Merge enriched data back into positions
-    if (data.positions && Array.isArray(data.positions)) {
-      data.positions.forEach(ep => {
-        const orig = S.positions.find(p => p.posId === ep.posId);
-        if (orig) {
-          if (ep.type && ep.type !== 'other') orig.typeObj = TYPES.find(t=>t.id===ep.type) || orig.typeObj;
-          if (ep.notes) orig.description += ' (' + ep.notes + ')';
-          if (ep.m2 && ep.m2 > orig.totalM2) orig.totalM2 = ep.m2;
-        }
-      });
-    }
-    
-    status.className = 'status show ok';
-    status.innerHTML = `<strong>Analiza zakończona!</strong> ${data.summary || ''}`;
-    
-  } catch (e) {
-    status.className = 'status show err';
-    status.textContent = 'Błąd analizy: ' + e.message;
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'Analizuj z Claude AI';
-}
+// Setup step 2
+(function() {
+  const summary = document.getElementById('pdf-summary');
+  // Will be populated when entering step 2
+})();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // STEP 3: RATES
 // ══════════════════════════════════════════════════════════════════════════════
-function setupStep3() {
+function setupRatesStep() {
   updateMarkupDisp();
   
+  // Show types that will be searched
   const types = {};
   S.positions.forEach(p => {
     if (!types[p.typeObj.id]) types[p.typeObj.id] = { label: p.typeObj.label, count: 0, m2: 0 };
@@ -779,12 +763,12 @@ function setupStep3() {
   `).join('');
   
   document.getElementById('types-to-search').innerHTML = `
-    <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">Typy elementów w projekcie:</p>
+    <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;">Typy elementów do wyszukania stawek:</p>
     ${html}
   `;
 }
 
-async function fetchRates() {
+async function fetchRatesForProject() {
   const btn = document.getElementById('fetch-rates-btn');
   const status = document.getElementById('rates-status');
   
@@ -794,7 +778,20 @@ async function fetchRates() {
   status.textContent = 'Pobieranie stawek z Perplexity AI...';
 
   try {
-    const res = await fetch('/api/rates', { method: 'POST' });
+    const res = await fetch('/api/rates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        positions: S.positions.map(p => ({
+          type: p.typeObj.id,
+          label: p.typeObj.label,
+          description: p.description.substring(0, 100),
+          m2: p.totalM2
+        })),
+        queries: S.perplexityQueries || []
+      })
+    });
+    
     const data = await res.json();
     
     if (data.rates && Object.keys(data.rates).length > 0) {
@@ -816,19 +813,29 @@ async function fetchRates() {
 }
 
 function showRatesResults(rates) {
-  const types = {};
-  S.positions.forEach(p => { if (!types[p.typeObj.id]) types[p.typeObj.id] = p.typeObj; });
+  const container = document.getElementById('rates-results');
   
-  document.getElementById('rates-results').innerHTML = Object.values(types).map(t => {
+  const types = {};
+  S.positions.forEach(p => {
+    if (!types[p.typeObj.id]) types[p.typeObj.id] = p.typeObj;
+  });
+  
+  const html = Object.values(types).map(t => {
     const lr = rates[t.id];
     const val = lr ? lr.avg : t.def;
     const rangeStr = lr ? `${lr.min}–${lr.max} EUR/m²` : 'wartość domyślna';
-    return `<div class="file-item ${lr ? 'ok' : ''}">
-      <span class="file-name">${t.label}</span>
-      <span class="file-info">${rangeStr}</span>
-      <strong style="font-family:var(--font-mono);font-size:12px;">${val} EUR/m²</strong>
-    </div>`;
+    const isLive = !!lr;
+    
+    return `
+      <div class="file-item ${isLive ? 'ok' : ''}">
+        <span class="file-name">${t.label}</span>
+        <span class="file-info">${rangeStr}</span>
+        <strong style="font-family:var(--font-mono);font-size:12px;">${val} EUR/m²</strong>
+      </div>
+    `;
   }).join('');
+  
+  container.innerHTML = html;
 }
 
 function toggle(btn, panelId) {
@@ -858,7 +865,7 @@ function render() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="td-pos">${esc(p.posId)}</td>
-      <td class="td-desc" title="${esc(p.description)}">${esc(p.description.substring(0, 50))}${p.description.length > 50 ? '…' : ''}</td>
+      <td class="td-desc" title="${esc(p.description)}">${esc(p.description.substring(0, 55))}${p.description.length > 55 ? '…' : ''}</td>
       <td><select onchange="changeType(${i},this.value)">
         ${TYPES.map(t => `<option value="${t.id}"${t.id === p.typeObj.id ? ' selected' : ''}>${t.label}</option>`).join('')}
       </select></td>
@@ -870,7 +877,6 @@ function render() {
   });
   
   updateTotals();
-  document.getElementById('project-name').value = S.projectName || '';
 }
 
 function changeType(i, typeId) {
@@ -906,7 +912,10 @@ function recalc() {
     if (S.customPrices?.[p.posId] === undefined) {
       const market = getBaseRate(p.typeObj.id);
       const el = document.getElementById('pr-' + i);
-      if (el) el.value = (market * mu).toFixed(2);
+      if (el) {
+        el.value = (market * mu).toFixed(2);
+        document.getElementById('mkt-' + i).textContent = fmt(market, 2);
+      }
     }
   });
   updateTotals();
@@ -916,44 +925,55 @@ function updateTotals() {
   let total = 0;
   S.positions.forEach((p, i) => {
     const price = parseFloat(document.getElementById('pr-' + i)?.value) || 0;
-    total += price * p.totalM2;
+    const val = price * p.totalM2;
+    const el = document.getElementById('vl-' + i);
+    if (el) el.textContent = fmt(val);
+    total += val;
   });
-  document.getElementById('t-netto').textContent = fmt(total) + ' €';
-  document.getElementById('t-vat').textContent = fmt(total * 0.19) + ' €';
-  document.getElementById('t-brutto').textContent = fmt(total * 1.19) + ' €';
+  document.getElementById('t-netto').textContent = fmt(total) + ' EUR';
+  document.getElementById('t-vat').textContent = fmt(total * 0.19) + ' EUR';
+  document.getElementById('t-brutto').textContent = fmt(total * 1.19) + ' EUR';
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// REVIEW
+// CLAUDE REVIEW
 // ══════════════════════════════════════════════════════════════════════════════
 async function doReview() {
   const btn = document.getElementById('review-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="loader"></span> Analiza…';
 
-  const positions = S.positions.map((p, i) => ({
-    posId: p.posId,
-    desc: p.description.substring(0, 80),
-    type: p.typeObj.label,
-    m2: p.totalM2,
-    price: parseFloat(document.getElementById('pr-' + i).value) || 0,
-    marketPrice: getBaseRate(p.typeObj.id),
-    value: (parseFloat(document.getElementById('pr-' + i).value) || 0) * p.totalM2,
+  const positions = S.positions
+    .filter((_, i) => { const v = parseFloat(document.getElementById('pr-' + i)?.value) || 0; return v > 0; })
+    .map((p, i) => ({
+      posId: p.posId,
+      desc: p.description.substring(0, 80),
+      type: p.typeObj.label,
+      m2: p.totalM2,
+      price: parseFloat(document.getElementById('pr-' + i).value) || 0,
+      marketPrice: getBaseRate(p.typeObj.id),
+      value: (parseFloat(document.getElementById('pr-' + i).value) || 0) * p.totalM2,
+    }));
+
+  let total = 0;
+  positions.forEach(p => total += p.value);
+
+  const pdfContent = Object.entries(S.pdfTexts).map(([filename, data]) => ({
+    filename,
+    pages: data.pages,
+    text: data.text.substring(0, 4000)
   }));
 
-  let total = positions.reduce((s, p) => s + p.value, 0);
+  const payload = {
+    positions,
+    totals: { netto: total.toFixed(2), vat: (total * 0.19).toFixed(2), brutto: (total * 1.19).toFixed(2) },
+    projectInfo: S.projectName || 'Projekt montażowy',
+    marketRates: S.liveRates,
+    pdfDocuments: pdfContent,
+  };
 
   try {
-    const res = await fetch('/api/review', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        positions,
-        totals: { netto: total.toFixed(2), vat: (total * 0.19).toFixed(2), brutto: (total * 1.19).toFixed(2) },
-        projectInfo: document.getElementById('project-name').value || 'Projekt montażowy',
-        marketRates: S.liveRates,
-      })
-    });
+    const res = await fetch('/api/review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showReview(data.review);
@@ -970,9 +990,11 @@ function showReview(md) {
   let html = md
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
+    .replace(/^• (.+)$/gm, '<li>$1</li>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-    .replace(/\n\n/g, '</p><p>');
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
   if (!html.startsWith('<')) html = '<p>' + html + '</p>';
   body.innerHTML = html;
   panel.style.display = 'block';
@@ -980,14 +1002,40 @@ function showReview(md) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// EXPORT
+// STEP 5: EXPORT
 // ══════════════════════════════════════════════════════════════════════════════
+function setupExportStep() {
+  let total = 0;
+  S.positions.forEach((p, i) => {
+    const price = parseFloat(document.getElementById('pr-' + i)?.value) || 0;
+    total += price * p.totalM2;
+  });
+  
+  document.getElementById('export-summary').innerHTML = `
+    <div class="totals">
+      <div class="total-item">
+        <div class="t-label">Pozycje</div>
+        <div class="t-value">${S.positions.length}</div>
+      </div>
+      <div class="total-item">
+        <div class="t-label">Suma netto</div>
+        <div class="t-value">${fmt(total)} EUR</div>
+      </div>
+      <div class="total-item">
+        <div class="t-label">Suma brutto</div>
+        <div class="t-value">${fmt(total * 1.19)} EUR</div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('project-name').value = S.projectName || '';
+}
+
 function exportXlsx() {
   let wb, ws;
-  const projName = document.getElementById('project-name').value || 'Wycena';
   
   if (S.excelWb) {
-    // Update existing workbook
+    // Modify existing workbook
     wb = S.excelWb;
     ws = wb.Sheets[wb.SheetNames[0]];
     const cm = S.excelColMap;
@@ -1008,6 +1056,7 @@ function exportXlsx() {
   } else {
     // Create new workbook
     wb = XLSX.utils.book_new();
+    
     const headers = ['Pos.', 'Beschreibung', 'Typ', 'm² Gesamt', 'Preis EUR/m²', 'Angebotswert EUR'];
     const data = [headers];
     
@@ -1026,14 +1075,16 @@ function exportXlsx() {
     
     ws = XLSX.utils.aoa_to_sheet(data);
     ws['!cols'] = [{ wch: 8 }, { wch: 50 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 16 }];
+    
     XLSX.utils.book_append_sheet(wb, ws, 'Wycena');
   }
   
   const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-  a.download = `${projName}_Wycena_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const url = URL.createObjectURL(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  const projName = document.getElementById('project-name').value || 'LV';
+  const a = Object.assign(document.createElement('a'), { href: url, download: `${projName}_Wycena_${new Date().toISOString().slice(0, 10)}.xlsx` });
   a.click();
+  URL.revokeObjectURL(url);
 }
 
 function exportCsv() {
@@ -1051,18 +1102,26 @@ function exportCsv() {
   rows.push(['', '', '', '', 'Suma netto:', total.toFixed(2)]);
   
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `Wycena_${new Date().toISOString().slice(0, 10)}.csv`;
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
+  const projName = document.getElementById('project-name').value || 'Wycena';
+  const a = Object.assign(document.createElement('a'), { href: url, download: `${projName}_${new Date().toISOString().slice(0, 10)}.csv` });
   a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // HISTORY
 // ══════════════════════════════════════════════════════════════════════════════
 function getHistory() {
-  try { return JSON.parse(localStorage.getItem('lv_history') || '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem('lv_history') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(history) {
+  localStorage.setItem('lv_history', JSON.stringify(history));
 }
 
 function saveToHistory() {
@@ -1078,7 +1137,14 @@ function saveToHistory() {
     const price = parseFloat(document.getElementById('pr-' + i).value) || 0;
     const value = price * p.totalM2;
     total += value;
-    return { posId: p.posId, description: p.description, typeId: p.typeObj.id, totalM2: p.totalM2, price, value };
+    return {
+      posId: p.posId,
+      description: p.description,
+      typeId: p.typeObj.id,
+      totalM2: p.totalM2,
+      price,
+      value
+    };
   });
   
   const project = {
@@ -1088,15 +1154,17 @@ function saveToHistory() {
     positions: positionsData,
     total,
     rates: S.liveRates,
+    pdfNames: Object.keys(S.pdfTexts),
   };
   
   const history = getHistory();
   history.unshift(project);
+  // Keep max 50 projects
   if (history.length > 50) history.length = 50;
-  localStorage.setItem('lv_history', JSON.stringify(history));
+  saveHistory(history);
   
   document.getElementById('save-status').className = 'status show ok';
-  document.getElementById('save-status').textContent = `Zapisano projekt "${name}".`;
+  document.getElementById('save-status').textContent = `Zapisano projekt "${name}" do historii.`;
 }
 
 function showHistory() {
@@ -1104,27 +1172,33 @@ function showHistory() {
   const list = document.getElementById('history-list');
   const history = getHistory();
   
-  list.innerHTML = history.length === 0 
-    ? '<div class="history-empty">Brak zapisanych projektów</div>'
-    : history.map(p => `
-        <div class="history-item" onclick="loadProject(${p.id})">
-          <span class="history-name">${esc(p.name)}</span>
-          <span class="history-date">${new Date(p.date).toLocaleDateString('pl-PL')}</span>
-          <span class="history-value">${fmt(p.total)} €</span>
-          <button class="history-delete" onclick="event.stopPropagation(); deleteProject(${p.id})" title="Usuń">✕</button>
-        </div>
-      `).join('');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="history-empty">Brak zapisanych projektów</div>';
+  } else {
+    list.innerHTML = history.map(p => `
+      <div class="history-item" onclick="loadProject(${p.id})">
+        <span class="history-name">${esc(p.name)}</span>
+        <span class="history-date">${new Date(p.date).toLocaleDateString('pl-PL')}</span>
+        <span class="history-value">${fmt(p.total)} EUR</span>
+        <button class="history-delete" onclick="event.stopPropagation(); deleteProject(${p.id})" title="Usuń">✕</button>
+      </div>
+    `).join('');
+  }
   
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-function hideHistory() { document.getElementById('history-panel').style.display = 'none'; }
+function hideHistory() {
+  document.getElementById('history-panel').style.display = 'none';
+}
 
 function loadProject(id) {
-  const project = getHistory().find(p => p.id === id);
+  const history = getHistory();
+  const project = history.find(p => p.id === id);
   if (!project) return;
   
+  // Restore state
   S.projectName = project.name;
   S.liveRates = project.rates || {};
   S.positions = project.positions.map(p => ({
@@ -1135,15 +1209,24 @@ function loadProject(id) {
     subItems: [{ excelRow: 0, m2: p.totalM2 }],
   }));
   S.customPrices = {};
-  project.positions.forEach(p => { S.customPrices[p.posId] = p.price; });
+  project.positions.forEach(p => {
+    S.customPrices[p.posId] = p.price;
+  });
   
   hideHistory();
   goToStep(4);
+  
+  // Update project name field
+  setTimeout(() => {
+    const nameField = document.getElementById('project-name');
+    if (nameField) nameField.value = project.name;
+  }, 100);
 }
 
 function deleteProject(id) {
   if (!confirm('Usunąć ten projekt z historii?')) return;
-  localStorage.setItem('lv_history', JSON.stringify(getHistory().filter(p => p.id !== id)));
+  const history = getHistory().filter(p => p.id !== id);
+  saveHistory(history);
   showHistory();
 }
 
@@ -1153,27 +1236,31 @@ function deleteProject(id) {
 function resetApp() {
   if (S.positions.length > 0 && !confirm('Rozpocząć nowy projekt? Niezapisane dane zostaną utracone.')) return;
   
-  S.excelWb = null;
-  S.excelFilename = '';
   S.pdfTexts = {};
   S.positions = [];
+  S.excelWb = null;
+  S.excelColMap = {};
   S.liveRates = {};
   S.customPrices = {};
   S.projectName = '';
   
+  document.getElementById('pdf-list').innerHTML = '';
+  document.getElementById('pdf-status').className = 'status';
+  document.getElementById('pdf-input').value = '';
+  document.getElementById('analyze-btn').disabled = true;
   document.getElementById('excel-info').innerHTML = '';
   document.getElementById('excel-status').className = 'status';
   document.getElementById('excel-input').value = '';
-  document.getElementById('to-pdf-btn').disabled = true;
-  document.getElementById('pdf-list').innerHTML = '';
-  document.getElementById('pdf-status').className = 'status';
+  document.getElementById('to-rates-btn').disabled = true;
   document.getElementById('review-panel').style.display = 'none';
   document.getElementById('history-panel').style.display = 'none';
   
   goToStep(1);
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
 // INIT
+// ══════════════════════════════════════════════════════════════════════════════
 updateMarkupDisp();
 </script>
 </body>
