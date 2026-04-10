@@ -18,9 +18,24 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Brak tekstu PDF do analizy' });
   }
 
-  const combinedText = pdfTexts
-    .map(doc => `\n=== ${doc.filename} (${doc.pages} stron) ===\n${doc.text}`)
-    .join('\n\n');
+  // Limit each document and total to avoid timeout
+  const MAX_PER_DOC = 8000;
+  const MAX_TOTAL = 25000;
+  
+  let combinedText = '';
+  for (const doc of pdfTexts) {
+    const docText = doc.text.substring(0, MAX_PER_DOC);
+    const toAdd = `\n=== ${doc.filename} (${doc.pages} stron) ===\n${docText}`;
+    if (combinedText.length + toAdd.length > MAX_TOTAL) {
+      combinedText += `\n=== ${doc.filename} === [SKRÓCONO - za dużo tekstu]\n`;
+      break;
+    }
+    combinedText += toAdd;
+  }
+  
+  if (combinedText.length < 50) {
+    return res.status(400).json({ error: 'Za mało tekstu w dokumentach PDF do analizy' });
+  }
 
   const prompt = `Analizujesz dokumentację techniczną (plany, rzuty, specyfikacje) projektu budowlanego z oknami i drzwiami aluminiowymi.
 
@@ -87,11 +102,39 @@ Jeśli dokument jest nieczytelny lub nie zawiera elementów montażowych, zwró�
     // Try to parse JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return res.status(502).json({ error: 'Nie udało się sparsować odpowiedzi Claude', raw: text });
+      return res.status(502).json({ error: 'Nie udało się sparsować odpowiedzi Claude', raw: text.substring(0, 500) });
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    return res.json(parsed);
+    // Clean up common JSON issues from LLM output
+    let jsonStr = jsonMatch[0]
+      .replace(/,\s*}/g, '}')           // trailing comma before }
+      .replace(/,\s*]/g, ']')           // trailing comma before ]
+      .replace(/[\x00-\x1F\x7F]/g, ' ') // control characters
+      .replace(/\n\s*\n/g, '\n');       // multiple newlines
+    
+    try {
+      const parsed = JSON.parse(jsonStr);
+      return res.json(parsed);
+    } catch (parseErr) {
+      // Try to extract at least positions array
+      const posMatch = jsonStr.match(/"positions"\s*:\s*\[([\s\S]*?)\]/);
+      if (posMatch) {
+        try {
+          const positions = JSON.parse('[' + posMatch[1].replace(/,\s*$/, '') + ']');
+          return res.json({ 
+            positions, 
+            summary: 'Częściowo sparsowano odpowiedź',
+            projectName: '' 
+          });
+        } catch (e) {
+          // fall through
+        }
+      }
+      return res.status(502).json({ 
+        error: 'Błąd parsowania JSON: ' + parseErr.message,
+        hint: 'Spróbuj ponownie lub wgraj mniej dokumentów'
+      });
+    }
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
