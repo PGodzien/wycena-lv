@@ -19,15 +19,15 @@ module.exports = async function handler(req, res) {
   }
 
   // Limit each document and total to avoid timeout
-  const MAX_PER_DOC = 8000;
-  const MAX_TOTAL = 25000;
+  const MAX_PER_DOC = 6000;
+  const MAX_TOTAL = 20000;
   
   let combinedText = '';
   for (const doc of pdfTexts) {
     const docText = doc.text.substring(0, MAX_PER_DOC);
     const toAdd = `\n=== ${doc.filename} (${doc.pages} stron) ===\n${docText}`;
     if (combinedText.length + toAdd.length > MAX_TOTAL) {
-      combinedText += `\n=== ${doc.filename} === [SKRÓCONO - za dużo tekstu]\n`;
+      combinedText += `\n=== ${doc.filename} === [SKRÓCONO]\n`;
       break;
     }
     combinedText += toAdd;
@@ -37,102 +37,122 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Za mało tekstu w dokumentach PDF do analizy' });
   }
 
-  const prompt = `Analizujesz dokumentację techniczną (plany, rzuty, specyfikacje) projektu budowlanego z oknami i drzwiami aluminiowymi.
+  const systemPrompt = `Jesteś ekspertem od wycen montażu okien i drzwi aluminiowych.
+Odpowiadasz WYŁĄCZNIE poprawnym JSON - bez markdown, bez komentarzy, bez tekstu przed/po.
+Upewnij się że JSON jest poprawny składniowo (bez trailing commas, poprawne cudzysłowy).
+Ogranicz liczbę pozycji do max 30 najważniejszych.`;
+
+  const userPrompt = `Przeanalizuj dokumentację i wyciągnij elementy do montażu.
 
 DOKUMENTACJA:
 ${combinedText}
 
-ZADANIE:
-Wyciągnij WSZYSTKIE elementy do montażu (okna, drzwi, HST, fasady, raffstore, itp.) i podaj je jako JSON.
+Zwróć JSON w formacie:
+{"projectName":"nazwa","positions":[{"posId":"1.1","description":"opis DE","type":"dk","breite":1800,"hoehe":1400,"menge":1,"m2":2.52,"notes":"uwagi"}],"summary":"podsumowanie"}
 
-Dla każdego elementu określ:
-- posId: numer pozycji (1.1, 1.2, 2.1 itd. lub z dokumentu)
-- description: opis elementu po niemiecku (jak w LV)
-- type: jeden z: hst_tip, hst_man, haustuer, dk, fest, stulp, brand, raff, other
-- breite: szerokość w mm (jeśli znana)
-- hoehe: wysokość w mm (jeśli znana)  
-- menge: ilość sztuk
-- m2: powierzchnia w m² na sztukę (oblicz z wymiarów jeśli podane, lub oszacuj)
-- notes: dodatkowe uwagi (RC2, Tiptronic, kolor RAL, szklenie itp.)
+TYPY: hst_tip, hst_man, haustuer, dk, fest, stulp, brand, raff, other
 
-TYPY:
-- hst_tip = Hebe-Schiebetür motorisch/Tiptronic
-- hst_man = Hebe-Schiebetür manuell
-- haustuer = Haustür, Eingangstür
-- dk = Dreh-Kipp-Fenster
-- fest = Festelement, Festverglassung
-- stulp = Stulpfenster
-- brand = Brandschutztür T30/F30
-- raff = Raffstore, Sonnenschutz
-- other = inne elementy
-
-Odpowiedz TYLKO jako czysty JSON (bez markdown):
-{
-  "projectName": "nazwa projektu jeśli znana",
-  "positions": [
-    {
-      "posId": "1.1",
-      "description": "Dreh-Kipp-Fenster 2-flügelig AWS 75",
-      "type": "dk",
-      "breite": 1800,
-      "hoehe": 1400,
-      "menge": 4,
-      "m2": 2.52,
-      "notes": "3-fach Verglasung, RAL 7016"
-    }
-  ],
-  "summary": "krótkie podsumowanie projektu",
-  "perplexityQueries": [
-    "konkretne zapytania do Perplexity o stawki dla specyficznych elementów z tego projektu"
-  ]
-}
-
-Jeśli nie możesz wyciągnąć konkretnych wymiarów, oszacuj typowe dla danego typu elementu.
-Jeśli dokument jest nieczytelny lub nie zawiera elementów montażowych, zwróć pustą listę positions z wyjaśnieniem w summary.`;
+WAŻNE: 
+- Max 30 pozycji
+- Poprawny JSON bez trailing commas
+- Tylko JSON, nic więcej`;
 
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 3000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
     });
 
-    const text = message.content[0].text;
+    let text = message.content[0].text.trim();
     
-    // Try to parse JSON from response
+    // Remove markdown code fences if present
+    text = text.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '');
+    
+    // Try to find JSON object
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return res.status(502).json({ error: 'Nie udało się sparsować odpowiedzi Claude', raw: text.substring(0, 500) });
+      return res.status(502).json({ 
+        error: 'Nie znaleziono JSON w odpowiedzi', 
+        raw: text.substring(0, 300) 
+      });
     }
 
-    // Clean up common JSON issues from LLM output
-    let jsonStr = jsonMatch[0]
-      .replace(/,\s*}/g, '}')           // trailing comma before }
-      .replace(/,\s*]/g, ']')           // trailing comma before ]
-      .replace(/[\x00-\x1F\x7F]/g, ' ') // control characters
-      .replace(/\n\s*\n/g, '\n');       // multiple newlines
+    // Aggressive JSON cleanup
+    let jsonStr = jsonMatch[0];
     
+    // Fix common LLM JSON errors
+    jsonStr = jsonStr
+      // Remove trailing commas
+      .replace(/,(\s*[}\]])/g, '$1')
+      // Remove control characters
+      .replace(/[\x00-\x1F\x7F]/g, ' ')
+      // Fix multiple spaces
+      .replace(/\s+/g, ' ');
+    
+    // Try parsing
     try {
       const parsed = JSON.parse(jsonStr);
-      return res.json(parsed);
+      
+      // Validate structure
+      if (!parsed.positions) parsed.positions = [];
+      if (!Array.isArray(parsed.positions)) parsed.positions = [];
+      
+      return res.json({
+        projectName: parsed.projectName || '',
+        positions: parsed.positions.slice(0, 30), // limit
+        summary: parsed.summary || `Znaleziono ${parsed.positions.length} pozycji`,
+        perplexityQueries: parsed.perplexityQueries || []
+      });
+      
     } catch (parseErr) {
-      // Try to extract at least positions array
-      const posMatch = jsonStr.match(/"positions"\s*:\s*\[([\s\S]*?)\]/);
-      if (posMatch) {
-        try {
-          const positions = JSON.parse('[' + posMatch[1].replace(/,\s*$/, '') + ']');
-          return res.json({ 
-            positions, 
-            summary: 'Częściowo sparsowano odpowiedź',
-            projectName: '' 
-          });
-        } catch (e) {
-          // fall through
-        }
+      // Last resort: try to extract positions manually with simpler regex
+      const positions = [];
+      
+      // Find all position-like objects
+      const objMatches = jsonStr.matchAll(/"posId"\s*:\s*"([^"]+)"/g);
+      for (const m of objMatches) {
+        if (positions.length >= 30) break;
+        
+        // Find the surrounding object
+        const startIdx = jsonStr.lastIndexOf('{', m.index);
+        const endIdx = jsonStr.indexOf('}', m.index);
+        if (startIdx === -1 || endIdx === -1) continue;
+        
+        const objStr = jsonStr.substring(startIdx, endIdx + 1);
+        
+        // Extract fields with regex
+        const descMatch = objStr.match(/"description"\s*:\s*"([^"]+)"/);
+        const typeMatch = objStr.match(/"type"\s*:\s*"([^"]+)"/);
+        const breiteMatch = objStr.match(/"breite"\s*:\s*(\d+)/);
+        const hoeheMatch = objStr.match(/"hoehe"\s*:\s*(\d+)/);
+        const mengeMatch = objStr.match(/"menge"\s*:\s*(\d+)/);
+        const m2Match = objStr.match(/"m2"\s*:\s*([\d.]+)/);
+        
+        positions.push({
+          posId: m[1],
+          description: descMatch ? descMatch[1] : 'Element',
+          type: typeMatch ? typeMatch[1] : 'other',
+          breite: breiteMatch ? parseInt(breiteMatch[1]) : 1500,
+          hoehe: hoeheMatch ? parseInt(hoeheMatch[1]) : 1200,
+          menge: mengeMatch ? parseInt(mengeMatch[1]) : 1,
+          m2: m2Match ? parseFloat(m2Match[1]) : 1.8,
+          notes: ''
+        });
       }
+      
+      if (positions.length > 0) {
+        return res.json({
+          projectName: '',
+          positions,
+          summary: `Częściowo sparsowano: ${positions.length} pozycji (metoda awaryjna)`
+        });
+      }
+      
       return res.status(502).json({ 
-        error: 'Błąd parsowania JSON: ' + parseErr.message,
-        hint: 'Spróbuj ponownie lub wgraj mniej dokumentów'
+        error: 'Nie udało się sparsować JSON. Spróbuj z mniejszą liczbą dokumentów.',
+        detail: parseErr.message
       });
     }
 
